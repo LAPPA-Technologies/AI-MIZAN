@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # AI-MIZAN
 The structured Moroccan legal engine
 =======
@@ -9,8 +8,6 @@ AI-Mizan is a legal-focused assistant designed to answer questions about **Moroc
 It retrieves relevant legal articles, provides **grounded answers with citations**, and supports **Darija, French, and Arabic**.
 
 > Goal: Make Moroccan law easier to understand while staying strict, transparent, and source-based.
-
----
 
 ## ✨ Features
 
@@ -45,6 +42,7 @@ Key files:
 ---
 
 ## 📂 Project Structure (actual)
+```bash
 AI-Mizan/
 ├─ app/
 │  └─ api/chat/route.ts
@@ -63,7 +61,7 @@ AI-Mizan/
 ├─ styles.css
 ├─ package.json
 └─ README.md
-
+```
 ## 🚀 Quickstart (how to run this repository)
 
 1) Clone
