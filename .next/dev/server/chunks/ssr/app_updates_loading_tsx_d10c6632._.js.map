@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/mboukane/Desktop/Prive/Embeded%20Soft%20Projects/AI-Mizan/app/updates/loading.tsx"],"sourcesContent":["const UpdatesLoading = () => {\r\n  return <div className=\"section\">Loading updates...</div>;\r\n};\r\n\r\nexport default UpdatesLoading;\r\n"],"names":[],"mappings":";;;;;;AAAA,MAAM,iBAAiB;IACrB,qBAAO,8OAAC;QAAI,WAAU;kBAAU;;;;;;AAClC;uCAEe"}}]
+}

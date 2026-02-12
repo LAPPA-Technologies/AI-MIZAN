@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LawArticle {
+  id            String      @id @default(cuid())
+  code          String
+  chapter       String
+  articleNumber String      @map("article_number")
+  language      String
+  text          String
+  source        String
+  effectiveDate DateTime?   @map("effective_date")
+  version       Int
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  embedding     LawEmbedding?
+  citations     ChatCitation[]
+
+  @@unique([code, chapter, articleNumber, language, version])
+  @@index([code])
+  @@index([code, chapter])
+  @@index([code, articleNumber])
+  @@map("law_articles")
+}
+
+model LawEmbedding {
+  id         String     @id @default(cuid())
+  articleId  String     @unique @map("article_id")
+  embedding  Float[]
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  article    LawArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@map("law_embeddings")
+}
+
+model ChatQuery {
+  id        String         @id @default(cuid())
+  question  String
+  answer    String
+  grounded  Boolean        @default(false)
+  ip        String?
+  userAgent String?        @map("user_agent")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  citations ChatCitation[]
+
+  @@index([createdAt])
+  @@map("chat_queries")
+}
+
+model ChatCitation {
+  id          String     @id @default(cuid())
+  chatQueryId String     @map("chat_query_id")
+  articleId   String     @map("article_id")
+  code        String
+  articleNumber String   @map("article_number")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  chatQuery   ChatQuery  @relation(fields: [chatQueryId], references: [id], onDelete: Cascade)
+  article     LawArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([chatQueryId])
+  @@map("chat_citations")
+}
+
+model RateLimit {
+  id          String   @id @default(cuid())
+  ip          String
+  windowStart DateTime @map("window_start")
+  count       Int      @default(0)
+
+  @@unique([ip, windowStart])
+  @@index([windowStart])
+  @@map("rate_limits")
+}
