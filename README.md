@@ -64,21 +64,21 @@ AI-Mizan/
 ```
 ## 🚀 Quickstart (how to run this repository)
 
-1) Clone
+### 1) Clone (Using Git shell cmd window)
 
 ```bash
 git clone <repo-url>
 cd AI-Mizan
 ```
 
-2) Install dependencies
+### 2) Install dependencies (Open a CMD window in the AI Mizan project folder)
 
 ```bash
 npm install
 # or pnpm install
 ```
 
-3) Configure environment
+### 3) Configure environment
 
 Copy and edit `.env` (create from `.env.example` if present):
 
@@ -88,16 +88,20 @@ cp .env.example .env
 
 Required / useful env vars are listed below.
 
-4) Run migrations, seed, and start dev server
-
+### 4) Run migrations, seed, and start dev server : 
+1- Prisma / seed (if you have Postgres):
 ```bash
 npm run prisma:generate
-npm run prisma:migrate
+npm run prisma:migrate 
 npm run db:seed
+```
+
+2- Start dev server:
+```bash
 npm run dev
 ```
 
-The app runs at `http://localhost:3000` by default.
+3- Open Chrome to the site: http://localhost:3000
 
 ## 🔧 Configuration (env)
 
