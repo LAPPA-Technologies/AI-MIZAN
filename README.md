@@ -63,45 +63,61 @@ AI-Mizan/
 └─ README.md
 ```
 ## 🚀 Quickstart (how to run this repository)
+### Prerequisites
+- **Node.js** (version 18 or later): Download and install from [nodejs.org](https://nodejs.org/).
+- **PostgreSQL**: Download from [postgresql.org](https://www.postgresql.org/download/windows/). After installation, start the PostgreSQL service.
 
-### 1) Clone (Using Git shell cmd window)
+### 1) Clone the repository
 
 ```bash
 git clone <repo-url>
 cd AI-Mizan
 ```
 
-### 2) Install dependencies (Open a CMD window in the AI Mizan project folder)
+### 2) Create the database
+
+Using pgAdmin or psql, connect to your PostgreSQL server and create a database named `ai_mizan`:
+
+```sql
+CREATE DATABASE ai_mizan;
+```
+
+### 3) Install dependencies (Open a CMD in the AI-MIZAN folder)
 
 ```bash
 npm install
-# or pnpm install
 ```
 
-### 3) Configure environment
+### 4) Configure environment
 
-Copy and edit `.env` (create from `.env.example` if present):
+Copy `.env.example` to `.env` and edit it:
 
 ```bash
 cp .env.example .env
 ```
 
-Required / useful env vars are listed below.
+Update the following variables:
+- `DATABASE_URL`: Set to your PostgreSQL connection string, e.g., `postgresql://postgres:yourpassword@localhost:5432/ai_mizan`.
+- `DEEPSEEK_API_KEY`: Add your DeepSeek API key (optional but recommended for chat completions).
+- `OPENAI_API_KEY`: Add your OpenAI API key (optional, for embeddings).
 
-### 4) Run migrations, seed, and start dev server : 
-1- Prisma / seed (if you have Postgres):
+### 5) Set up the database
+
 ```bash
-npm run prisma:generate
-npm run prisma:migrate 
+npx prisma generate
+npx prisma migrate dev
 npm run db:seed
 ```
 
-2- Start dev server:
+### 6) Start the development server
+
 ```bash
 npm run dev
 ```
 
-3- Open Chrome to the site: http://localhost:3000
+The app will run at `http://localhost:3000`. Open it in your browser.
+The app runs at `http://localhost:3000` by default.
+
 
 ## 🔧 Configuration (env)
 
