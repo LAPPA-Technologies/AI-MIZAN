@@ -4,6 +4,38 @@ const detectLanguage = (text: string): "ar" | "fr" | "en" => {
   if (/\b(le|la|les|du|des|et|ou|pour|avec|sans|article|contrat|loi|droit)\b/i.test(text)) return "fr";
   return "en";
 };
+
+// Function to extract book order from book title
+const getBookOrder = (book: string | null): number | null => {
+  if (!book) return null;
+  
+  const arabicNumbers: { [key: string]: number } = {
+    'الأول': 1,
+    'الثاني': 2,
+    'الثالث': 3,
+    'الرابع': 4,
+    'الخامس': 5,
+    'السادس': 6,
+    'السابع': 7,
+    'الثامن': 8,
+    'التاسع': 9,
+    'العاشر': 10
+  };
+  
+  for (const [word, num] of Object.entries(arabicNumbers)) {
+    if (book.includes(word)) {
+      return num;
+    }
+  }
+  
+  // Fallback: try to find numbers in the string
+  const match = book.match(/(\d+)/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  
+  return null;
+};
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -12,32 +44,46 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 type SeedArticle = {
+  doc_id: string;
   code: string;
-  chapter: string;
+  article_id: string;
   article_number: string;
-  language: "ar" | "fr";
+  language: string;
+  path: {
+    book: string | null;
+    title: string | null;
+    chapter: string | null;
+    section: string | null;
+  };
   text: string;
   source: string;
-  effective_date?: string;
+  effective_date: string;
   version: number;
+  pdf_file: string;
+  pdf_pages: number[];
+  order_index: number;
 };
 
-const dataDir = path.join(process.cwd(), "data", "laws");
+const dataDir = path.join(process.cwd(), "data");
 
 const loadSeedFiles = () => {
-  if (!fs.existsSync(dataDir)) {
-    return [] as SeedArticle[];
-  }
-
-  const files = fs
-    .readdirSync(dataDir)
-    .filter((file) => file.endsWith(".json"));
+  const files = [
+    "family_law_articles_fr.json",
+    "family_law_articles_en.json", 
+    "family_law_articles_ar.json",
+    "penal_code_fr.json",
+    "obligations_articles_ar.json",
+    "civil_procedure_articles_ar.json"
+  ];
 
   const entries: SeedArticle[] = [];
   files.forEach((file) => {
-    const raw = fs.readFileSync(path.join(dataDir, file), "utf8");
-    const parsed = JSON.parse(raw) as SeedArticle[];
-    entries.push(...parsed);
+    const filePath = path.join(dataDir, file);
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, "utf8");
+      const parsed = JSON.parse(raw) as SeedArticle[];
+      entries.push(...parsed);
+    }
   });
 
   return entries;
@@ -112,9 +158,8 @@ const main = async () => {
   for (const entry of entries) {
     const article = await prisma.lawArticle.upsert({
       where: {
-        code_chapter_articleNumber_language_version: {
+        code_articleNumber_language_version: {
           code: entry.code,
-          chapter: entry.chapter,
           articleNumber: entry.article_number,
           language: entry.language,
           version: entry.version
@@ -123,21 +168,30 @@ const main = async () => {
       update: {
         text: entry.text,
         source: entry.source,
-        effectiveDate: entry.effective_date ? new Date(entry.effective_date) : null
+        effectiveDate: new Date(entry.effective_date),
+        bookOrder: getBookOrder(entry.path.book),
+        book: entry.path.book,
+        title: entry.path.title,
+        chapter: entry.path.chapter,
+        section: entry.path.section
       },
       create: {
         code: entry.code,
-        chapter: entry.chapter,
+        book: entry.path.book,
+        bookOrder: getBookOrder(entry.path.book),
+        title: entry.path.title,
+        chapter: entry.path.chapter,
+        section: entry.path.section,
         articleNumber: entry.article_number,
         language: entry.language,
         text: entry.text,
         source: entry.source,
-        effectiveDate: entry.effective_date ? new Date(entry.effective_date) : null,
+        effectiveDate: new Date(entry.effective_date),
         version: entry.version
       }
     });
 
-    const embedding = await createEmbedding(`${entry.code} ${entry.chapter} ${entry.text}`);
+    const embedding = await createEmbedding(`${entry.code} ${entry.path.chapter} ${entry.text}`);
     if (embedding && Array.isArray(embedding) ? embedding.length > 0 : embedding) {
       await prisma.lawEmbedding.upsert({
         where: {

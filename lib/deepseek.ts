@@ -32,9 +32,8 @@ export const generateDeepSeekResponse = async (
       body: JSON.stringify({
         model,
         messages,
-        // Small talk is short: keep it stable + cheap
         temperature: 0.2,
-        max_tokens: 200
+        max_tokens: 1500
       })
     });
   } catch (err) {

@@ -3,34 +3,78 @@
 @tailwind utilities;
 
 :root {
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+  --color-primary: #16a34a;
+  --color-primary-dark: #15803d;
+  --page-bg: #F7F9FB;
+}
+
+:root {
   color-scheme: light;
 }
 
 body {
-  background: #f5f7fb;
-  color: #0b1b2b;
-  font-family: "Source Sans 3", system-ui, -apple-system, sans-serif;
+  background: #ffffff;
+  color: #0b1724;
+  font-family: Cairo, "Source Sans 3", system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
+/* ─── RTL Support ─────────────────────────────────── */
 html[dir="rtl"] body {
-  font-family: "Cairo", "Source Sans 3", sans-serif;
+  direction: rtl;
+}
+
+html[dir="rtl"] .flip-rtl {
+  transform: scaleX(-1);
+}
+
+/* Flex RTL: reverse flex row children for RTL */
+html[dir="rtl"] .flex-row-rtl {
+  flex-direction: row-reverse;
+}
+
+/* Auto-mirror: Ensure search forms, filter bars etc flow correctly in RTL */
+html[dir="rtl"] .search-bar {
+  direction: rtl;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea {
+  text-align: inherit;
+}
+
+html[dir="rtl"] select {
+  background-position: left 0.5rem center;
+  padding-left: 2rem;
+  padding-right: 1rem;
 }
 
 .container {
-  @apply mx-auto w-full max-w-6xl px-6;
+  @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+  max-width: 1200px;
+}
+
+.container > div {
+  @apply mx-auto w-full;
 }
 
 .section {
-  @apply py-12;
+  @apply py-6 md:py-8;
 }
 
 .card {
-  @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm;
-  box-shadow: 0 12px 28px rgba(11, 27, 43, 0.08);
+  @apply p-4 sm:p-6 border border-slate-200 bg-white shadow-soft rounded-lg;
 }
 
 .badge {
-  @apply inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700;
+  @apply inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700;
 }
 
 .rtl {
@@ -38,13 +82,8 @@ html[dir="rtl"] body {
   text-align: right;
 }
 
-html[dir="rtl"] .container {
-  direction: rtl;
-}
-
 .surface {
-  @apply rounded-2xl border border-slate-200 bg-white p-6;
-  box-shadow: 0 10px 22px rgba(11, 27, 43, 0.06);
+  @apply border border-slate-200 bg-white p-4 sm:p-6 rounded-lg shadow-soft;
 }
 
 .section-title {
@@ -56,17 +95,22 @@ html[dir="rtl"] .container {
 }
 
 .btn-primary {
-  @apply rounded-full bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800;
+  @apply rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-green-700 active:bg-green-800;
 }
 
 .btn-outline {
-  @apply rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700;
+  @apply rounded-lg border-2 border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-green-500 hover:text-green-700 hover:bg-green-50;
+}
+
+.btn-secondary {
+  @apply rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-100;
 }
 
 .input-shell {
-  @apply rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm;
+  @apply rounded-lg border-2 border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all w-full;
 }
 
+/* Typing Animation */
 .typing-dots {
   display: inline-flex;
   align-items: center;
@@ -91,28 +135,6 @@ html[dir="rtl"] .container {
   animation-delay: 0.4s;
 }
 
-.chat-scroll {
-  scrollbar-gutter: stable both-edges;
-  scroll-behavior: smooth;
-}
-
-.chat-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.28);
-  border-radius: 999px;
-}
-
-.chat-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(148, 163, 184, 0.5);
-}
-
 @keyframes typing-bounce {
   0%,
   80%,
@@ -124,4 +146,97 @@ html[dir="rtl"] .container {
     transform: translateY(-4px);
     opacity: 1;
   }
+}
+
+/* Custom Scrollbar */
+.chat-scroll {
+  scrollbar-gutter: stable;
+  scroll-behavior: smooth;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.5);
+}
+
+/* Firefox scrollbar */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+/* Prose/legal reading rules */
+.prose-legal {
+  max-width: 65ch;
+  font-size: 1.125rem;
+  line-height: 1.8;
+  letter-spacing: 0;
+  text-align: justify;
+  margin-bottom: var(--space-md);
+  color: #0f1724;
+}
+
+.prose-legal p {
+  margin-bottom: 1.5rem;
+}
+
+.prose-legal h1 {
+  font-family: 'Noto Serif Arabic', serif;
+  font-size: 2rem;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.prose-legal h2 {
+  font-size: 1.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-legal h3 {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.shadow-soft {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Smooth transitions — only for interactive elements */
+a, button, input, select, textarea {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
+}
+
+/* Improve button interaction */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Better text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }

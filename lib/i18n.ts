@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   dictionaries,
   localeDateMap,
@@ -6,7 +6,7 @@ import {
   type Locale
 } from "./i18nData";
 
-const DEFAULT_LOCALE: Locale = "en";
+const DEFAULT_LOCALE: Locale = "ar";
 
 export const getLocale = async () => {
   const cookieStore = await cookies();
@@ -14,6 +14,17 @@ export const getLocale = async () => {
   if (value && locales.includes(value as Locale)) {
     return value as Locale;
   }
+
+  // Fallback to browser language detection
+  const headersList = await headers();
+  const acceptLanguage = headersList.get("accept-language");
+  if (acceptLanguage) {
+    const browserLang = acceptLanguage.split(",")[0].split("-")[0];
+    if (locales.includes(browserLang as Locale)) {
+      return browserLang as Locale;
+    }
+  }
+
   return DEFAULT_LOCALE;
 };
 

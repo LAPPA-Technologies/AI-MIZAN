@@ -10,7 +10,11 @@ datasource db {
 model LawArticle {
   id            String      @id @default(cuid())
   code          String
-  chapter       String
+  book          String?
+  bookOrder     Int?        @map("book_order")
+  title         String?
+  chapter       String?
+  section       String?
   articleNumber String      @map("article_number")
   language      String
   text          String
@@ -23,7 +27,7 @@ model LawArticle {
   embedding     LawEmbedding?
   citations     ChatCitation[]
 
-  @@unique([code, chapter, articleNumber, language, version])
+  @@unique([code, articleNumber, language, version])
   @@index([code])
   @@index([code, chapter])
   @@index([code, articleNumber])

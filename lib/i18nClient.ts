@@ -5,7 +5,7 @@ import { dictionaries, locales } from "./i18nData";
 
 export const getClientLocale = (): Locale => {
   if (typeof document === "undefined") {
-    return "en";
+    return "ar";
   }
 
   const match = document.cookie.match(/(?:^|; )locale=([^;]+)/);
@@ -14,9 +14,13 @@ export const getClientLocale = (): Locale => {
     return value as Locale;
   }
 
-  return "en";
+  return "ar";
 };
 
-export const getClientDictionary = () => {
-  return dictionaries[getClientLocale()];
+export const getClientDictionary = (): Record<string, string> & { language: Locale } => {
+  const locale = getClientLocale();
+  return {
+    ...dictionaries[locale],
+    language: locale
+  };
 };
