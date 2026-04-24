@@ -114,7 +114,7 @@ const HomePage = async () => {
             { icon: "🏠", text: dict.quickRent, href: "/guides#housing" },
             { icon: "💼", text: dict.quickWork, href: "/guides#employment" },
             { icon: "👨‍👩‍👧", text: dict.quickFamily, href: "/guides#family" },
-            { icon: "🚗", text: dict.quickAccidents, href: "/laws/penal/articles" },
+            { icon: "🚗", text: dict.quickAccidents, href: "/laws/penal_code/articles" },
           ].map((item) => (
             <Link
               key={item.text}
@@ -138,9 +138,9 @@ const HomePage = async () => {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { code: "family", icon: "👨‍👩‍👧", label: dict.familyCodeTitle || "Family Code", desc: dict.familyCodeShort || "Marriage, divorce, custody, inheritance", color: "green" },
-            { code: "penal", icon: "⚖️", label: dict.penalCodeTitle || "Penal Code", desc: dict.penalCodeShort || "Criminal offences and penalties", color: "red" },
-            { code: "obligations", icon: "📜", label: dict.obligationsCodeTitle || "DOC", desc: dict.obligationsCodeShort || "Contracts, obligations, liability", color: "blue" },
+            { code: "family_code", icon: "👨‍👩‍👧", label: dict.familyCodeTitle || "Family Code", desc: dict.familyCodeShort || "Marriage, divorce, custody, inheritance", color: "green" },
+            { code: "penal_code", icon: "⚖️", label: dict.penalCodeTitle || "Penal Code", desc: dict.penalCodeShort || "Criminal offences and penalties", color: "red" },
+            { code: "obligations_contracts", icon: "📜", label: dict.obligationsCodeTitle || "DOC", desc: dict.obligationsCodeShort || "Contracts, obligations, liability", color: "blue" },
             { code: "civil_procedure", icon: "🏛️", label: dict.civilProcedureCodeTitle || "Civil Procedure", desc: dict.civilProcedureCodeShort || "Court procedures, appeals, enforcement", color: "amber" },
           ].map((item) => (
             <Link
