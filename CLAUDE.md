@@ -71,3 +71,17 @@ Examples:
 5. Homepage redesign — tools-first
 6. Inheritance simulator polish + first real guide
 7. Iterate content until deployment-ready
+
+## Known quirks
+
+### Worktree duplicate lockfile warning
+
+Next.js may show a warning about a duplicate `package-lock.json` when working
+inside a Claude Code worktree (e.g. `.claude/worktrees/cool-chatterjee-690f2c/`).
+This is a worktree artifact — the worktree and the main project folder both have
+a `package-lock.json`, which confuses Next.js workspace root detection.
+
+The warning disappears when working on the main branch in the regular project
+folder. Do not add `outputFileTracingRoot` or `turbopack.root` to `next.config.mjs`
+to fix it — doing so breaks the build because `node_modules` lives in the parent
+directory, not the worktree.
