@@ -36,42 +36,84 @@ const UNSAFE_PATTERNS = [
 ].map(wordRegex);
 
 const OBVIOUSLY_NON_LEGAL_PATTERNS = [
-  // English
-  "weather", "temperature", "forecast", "recipe", "cook", "food", "sport", "football", "basketball", "music", "movie", "film",
+  // English — only unambiguous non-legal topics
+  "weather", "temperature", "forecast", "recipe", "cooking", "sport", "football", "basketball", "music", "movie", "film", "joke",
+  "celebrity", "actor", "singer", "tv show", "video game",
   // French
-  "météo", "recette", "cuisine", "football", "musique",
+  "météo", "recette de cuisine", "football", "musique",
   // Arabic
-  "طقس", "طبخ", "رياضة", "كرة قدم", "موسيقى", "فيلم"
+  "طقس", "طبخ", "وصفة", "موسيقى", "فيلم", "مسلسل"
 ].map(wordRegex);
+
+/**
+ * Comprehensive Moroccan legal keyword list.
+ * If ANY of these appear, we proceed to retrieval (never block as non-legal).
+ */
+const LEGAL_HINT_REGEX = new RegExp(
+  [
+    // General law
+    "law", "legal", "droit", "loi", "قانون", "مدونة", "article", "مادة", "tribunal", "محكمة",
+    "procédure", "مسطرة", "jugement", "حكم", "avocat", "محامي", "notaire", "عدل",
+    // Family law / Moudawana
+    "divorce", "طلاق", "تطليق", "mariage", "زواج", "custody", "حضانة", "garde",
+    "inheritance", "inherit", "إرث", "ميراث", "تركة", "وصية",
+    "pension", "نفقة", "alimony", "mahr", "صداق", "مهر", "polygam", "تعدد",
+    "répudiation", "khul", "خلع", "filiation", "نسب",
+    // Labor
+    "travail", "شغل", "عمل", "licenciem", "فصل", "سراح", "indemnité", "تعويض",
+    "salaire", "راتب", "أجر", "contrat de travail", "retraite", "تقاعد",
+    "congé", "إجازة", "CNSS", "AMO", "grève", "إضراب",
+    // Penal
+    "pénal", "criminal", "جنائي", "جريمة", "crime", "infraction", "مخالفة",
+    "prison", "سجن", "amende", "غرامة", "peine", "عقوبة",
+    // Property / real estate
+    "propriété", "ملكية", "عقار", "immobil", "loyer", "إيجار", "bail", "expulsion", "طرد",
+    "copropriété", "hypothèque", "رهن",
+    // Contracts / obligations
+    "contrat", "عقد", "obligation", "التزام", "responsabilité", "مسؤولية",
+    "résiliation", "faillite", "إفلاس", "dette", "دين",
+    // Civil procedure
+    "appel", "استئناف", "recours", "طعن", "cassation", "نقض", "exécution", "تنفيذ",
+    // Commerce
+    "commercial", "تجاري", "société", "شركة", "brevet", "marque",
+    // Misc Moroccan legal
+    "Moudawana", "مدونة الأسرة", "dahir", "ظهير", "bulletin officiel", "الجريدة الرسمية",
+    "code pénal", "قانون العقوبات", "DOC", "قانون الالتزامات",
+    // Common Moroccan questions
+    "droit", "حق", "حقوق", "droits", "obligation", "واجب", "شروط", "conditions",
+    "procédure", "إجراء", "délai", "أجل", "délais",
+  ]
+    .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|"),
+  "i"
+);
 
 const normalize = (s: string) => s.toLowerCase().trim();
 
 export const fastRoute = (question: string): FastRouteResult => {
   const text = normalize(question);
-
-  // Very short inputs (≤ 3 words) that match smalltalk exactly
   const wordCount = text.split(/\s+/).length;
 
-  // Check smalltalk — only flag on short messages to avoid false positives
+  // Smalltalk — only short messages
   if (wordCount <= 4) {
     for (const pattern of SMALLTALK_PATTERNS) {
       if (pattern.test(text)) return "SMALLTALK";
     }
   }
 
-  // Check unsafe
+  // Unsafe — always block
   for (const pattern of UNSAFE_PATTERNS) {
     if (pattern.test(text)) return "UNSAFE";
   }
 
-  // Check obviously non-legal (only on messages without legal keywords)
-  const hasLegalHint = /law|legal|droit|loi|قانون|مدونة|article|مادة|tribunal|محكمة|divorce|طلاق|custody|حضانة|marriage|زواج|inherit|إرث|pension|نفقة/i.test(text);
-  if (!hasLegalHint) {
-    for (const pattern of OBVIOUSLY_NON_LEGAL_PATTERNS) {
-      if (pattern.test(text)) return "NON_LEGAL";
-    }
+  // If legal keywords detected → proceed to retrieval regardless
+  if (LEGAL_HINT_REGEX.test(text)) return null;
+
+  // Only flag NON_LEGAL if explicitly off-topic and no legal keywords
+  for (const pattern of OBVIOUSLY_NON_LEGAL_PATTERNS) {
+    if (pattern.test(text)) return "NON_LEGAL";
   }
 
-  // Proceed to LLM classification
+  // For anything unclear → let retrieval decide
   return null;
 };

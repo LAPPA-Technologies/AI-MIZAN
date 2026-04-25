@@ -1,526 +1,423 @@
 // app/api/chat/route.ts
-import { NextResponse } from "next/server";
+//
+// Pipeline (max 2 API calls):
+//   1. FastRouter (free, regex only) → instant reject for UNSAFE / NON_LEGAL / SMALLTALK
+//   2. createEmbedding (1 API call OR free local hash)
+//   3. Vector search + keyword fallback (local DB only)
+//   4. streamDeepSeek answer (1 API call, real SSE streaming to client)
+//
+// Removed: LLM classifier (was call #1), LLM query expansion (was call #2 + 5 embedding calls)
+
 import { headers } from "next/headers";
 import { chatRequestSchema } from "../../../lib/validators";
 import { createEmbedding } from "../../../lib/embeddings";
-import { keywordFallback, retrieveWithExpansions, generateQueryExpansions } from "../../../lib/search";
-import { generateDeepSeekResponse } from "../../../lib/deepseek";
+import { keywordFallback, getTopicKeywords, retrieveRelevantArticles } from "../../../lib/search";
+import { streamDeepSeek, DeepSeekMessage } from "../../../lib/deepseek";
 import { prisma } from "../../../lib/prisma";
 import { checkRateLimit } from "../../../lib/rateLimit";
-import { classifyQuestion, HistoryMessage } from "../../../lib/classifier";
 import { fastRoute } from "../../../lib/fastRouter";
 import { detectLanguage, SupportedLanguage } from "../../../lib/language";
 
 type Lang = SupportedLanguage;
-type Decision = "LEGAL" | "NEEDS_CLARIFICATION" | "NON_LEGAL" | "UNSAFE";
+export const runtime = "nodejs";
 
 /* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
+/*  Static response helpers                                            */
 /* ------------------------------------------------------------------ */
 
-const CODE_NAMES: Record<string, string> = {
-  family: "Family Code (Moudawana)",
-  penal: "Penal Code",
-  obligations: "Obligations & Contracts (DOC)",
-  civil_procedure: "Civil Procedure Code",
+const LEGAL_CODES = "مدونة الأسرة (Moudawana), القانون الجنائي, قانون الالتزامات والعقود (DOC), قانون المسطرة المدنية, قانون الشغل, قانون التجارة, قانون التعمير";
+
+const INSTANT: Record<string, Record<Lang, string>> = {
+  smalltalk: {
+    fr: "Bonjour 👋 Je suis AI-Mizan, votre assistant d'information juridique marocain. Posez-moi une question sur le droit marocain.",
+    en: "Hi 👋 I'm AI-Mizan, your Moroccan legal information assistant. Ask me about Moroccan law.",
+    ar: "مرحبًا 👋 أنا AI-Mizan، مساعدك للمعلومات القانونية المغربية. اطرح سؤالك حول القانون المغربي.",
+    darija: "سلام 👋 أنا AI-Mizan، المساعد ديالك للمعلومات القانونية المغربية. سَوّلني على القانون المغربي.",
+  },
+  nonLegal: {
+    fr: "AI-Mizan fournit uniquement des informations sur le droit marocain (famille, pénal, obligations, travail, commerce). Veuillez poser une question juridique.",
+    en: "AI-Mizan provides information about Moroccan law only (family, penal, obligations, labor, commerce). Please ask a legal question.",
+    ar: "AI-Mizan يقدم معلومات عن القانون المغربي فقط (أسرة، جنائي، التزامات، شغل، تجارة). يرجى طرح سؤال قانوني.",
+    darija: "AI-Mizan كيعطي غير معلومات على القانون المغربي (أسرة، جنائي، عقود، شغل). سوّل سؤال قانوني.",
+  },
+  unsafe: {
+    fr: "Je ne peux pas aider pour des demandes illégales ou frauduleuses.",
+    en: "I cannot assist with illegal or fraudulent requests.",
+    ar: "لا أستطيع المساعدة في طلبات غير قانونية أو احتيالية.",
+    darija: "ما نقدرش نعاون فطلبات غير قانونية.",
+  },
+  clarify: {
+    fr: "Aucun article de loi correspondant n'a été trouvé. Pouvez-vous préciser votre question en indiquant le domaine juridique concerné (famille, travail, pénal, contrats…) ?",
+    en: "No matching law article was found. Could you clarify your question and specify the legal domain (family, labor, penal, contracts…)?",
+    ar: "لم يُعثر على مادة قانونية مطابقة. هل يمكنك توضيح سؤالك وتحديد المجال القانوني (أسرة، شغل، جنائي، عقود…)؟",
+    darija: "ما تلقيناش مادة قانونية مناسبة. واش تقدر توضح السؤال ديالك وتحدد المجال (أسرة، شغل، جنائي، عقود…)؟",
+  },
 };
 
-const preferLanguage = <T extends { language?: string }>(items: T[], lang: Lang) => {
-  const preferred = items.filter((x) => x.language === lang);
-  return preferred.length >= 3 ? preferred : items;
-};
-
-const isSmalltalk = (q: string) => {
-  const t = q.trim().toLowerCase();
-  return (
-    /^(hi|hello|hey|bonjour|salut|salam|السلام عليكم|مرحبا|أهلا)$/i.test(t) ||
-    /^(how are you|ça va|comment ça va|kif dayr|labas|bikhir|كيف حالك)$/i.test(t) ||
-    /^(thanks|merci|شكرا|chokran|thx)$/i.test(t)
-  );
-};
-
-const smalltalkReply = (lang: Lang) => {
-  const r: Record<Lang, string> = {
-    fr: "Bonjour 👋 Je suis AI-Mizan, votre assistant juridique marocain. Posez-moi une question sur le droit marocain (famille, pénal, obligations, procédure civile…).",
-    en: "Hi 👋 I'm AI-Mizan, your Moroccan law assistant. Ask me about Moroccan law (family, penal, obligations, civil procedure…).",
-    ar: "مرحبًا 👋 أنا AI-Mizan، مساعدك القانوني المغربي. اطرح سؤالك حول القانون المغربي (أسرة، جنائي، التزامات، مسطرة مدنية...).",
-    darija: "سلام 👋 أنا AI-Mizan، المساعد ديالك فالقانون المغربي. سَوّلني على أي حاجة فالقانون المغربي (أسرة، جنائي، عقود، مسطرة مدنية...)."
-  };
-  return r[lang] ?? r.fr;
-};
-
-const buildLegalOnlyMessage = (lang: Lang) => {
-  const m: Record<Lang, string> = {
-    fr: "AI-Mizan répond uniquement aux questions de droit marocain (famille, pénal, obligations, procédure civile). Reformulez votre question en lien avec le droit marocain.",
-    en: "AI-Mizan answers only Moroccan law questions (family, penal, obligations, civil procedure). Please rephrase your question in relation to Moroccan law.",
-    ar: "AI-Mizan يجيب فقط عن أسئلة القانون المغربي (أسرة، جنائي، التزامات، مسطرة مدنية). أعد صياغة سؤالك في إطار القانون المغربي.",
-    darija: "AI-Mizan يجاوب غي على أسئلة القانون المغربي (أسرة، جنائي، عقود، مسطرة مدنية). عاود صوّغ السؤال ديالك باش يكون فالقانون المغربي."
-  };
-  return m[lang] ?? m.fr;
-};
-
-const buildUnsafeMessage = (lang: Lang) => {
-  const m: Record<Lang, string> = {
-    fr: "Désolé, je ne peux pas aider pour des demandes illégales ou frauduleuses.",
-    ar: "عذرًا، لا أستطيع المساعدة في طلبات غير قانونية أو احتيالية.",
-    en: "Sorry — I cannot assist with illegal or fraudulent requests.",
-    darija: "سمح ليا، ما نقدرش نعاون فطلبات غير قانونية ولا احتيالية."
-  };
-  return m[lang] ?? m.fr;
-};
-
-const buildClarifyPrompts = (lang: Lang) => {
-  const prompts: Record<Lang, string[]> = {
-    fr: [
-      "Votre question concerne-t-elle le droit marocain (famille, pénal, obligations, procédure civile) ?",
-      "Pouvez-vous préciser les parties concernées et les faits ?",
-      "Quel résultat souhaitez-vous obtenir ?"
-    ],
-    ar: [
-      "هل سؤالك يخص القانون المغربي (أسرة/جنائي/التزامات/مسطرة مدنية)؟",
-      "هل يمكنك توضيح الأطراف والوقائع؟",
-      "ما النتيجة التي تريد الوصول إليها؟"
-    ],
-    en: [
-      "Does your question relate to Moroccan law (family, penal, obligations, civil procedure)?",
-      "Can you clarify the parties and facts involved?",
-      "What outcome are you looking for?"
-    ],
-    darija: [
-      "واش السؤال ديالك على القانون المغربي (أسرة/جنائي/عقود/مسطرة مدنية)؟",
-      "واش تقدر توضح الأطراف والوقائع؟",
-      "شنو النتيجة لي باغي توصل ليها؟"
-    ]
-  };
-  return prompts[lang] ?? prompts.fr;
-};
+const instant = (type: keyof typeof INSTANT, lang: Lang) =>
+  INSTANT[type]?.[lang] ?? INSTANT[type]?.fr ?? "";
 
 /* ------------------------------------------------------------------ */
-/*  Classification (fast-route first, then LLM with history context)   */
+/*  System prompt — information only, no legal advice                  */
 /* ------------------------------------------------------------------ */
-const classifyWithApi = async (
-  question: string,
-  lang: Lang,
-  history: HistoryMessage[] = [],
-): Promise<{ decision: Decision; confidence: number; reason?: string }> => {
-  // Fast route catches obvious smalltalk / unsafe / non-legal
-  const fastResult = fastRoute(question);
-  if (fastResult === "SMALLTALK") {
-    return { decision: "NEEDS_CLARIFICATION", confidence: 1.0, reason: "smalltalk" };
-  }
-  if (fastResult === "UNSAFE") {
-    return { decision: "UNSAFE", confidence: 1.0, reason: "unsafe" };
-  }
-  if (fastResult === "NON_LEGAL") {
-    // If this is a follow-up in a legal conversation, don't flag as non-legal
-    if (history.length > 0) {
-      return { decision: "LEGAL", confidence: 0.6, reason: "follow-up-override" };
-    }
-    return { decision: "NON_LEGAL", confidence: 0.9, reason: "obviously non-legal" };
-  }
 
-  // Short follow-up answers (≤ 4 words) in an ongoing conversation → skip classifier
-  const wordCount = question.trim().split(/\s+/).length;
-  if (history.length > 0 && wordCount <= 4) {
-    return { decision: "LEGAL", confidence: 0.75, reason: "short-follow-up" };
-  }
-
-  // LLM classification with conversation history
-  try {
-    const result = await classifyQuestion(question, lang, history);
-    let decision: Decision;
-    if (result.isLegal) {
-      decision = "LEGAL";
-    } else if (result.confidence < 0.5) {
-      decision = "NEEDS_CLARIFICATION";
-    } else {
-      decision = "NON_LEGAL";
-    }
-    return { decision, confidence: result.confidence, reason: result.intent };
-  } catch (error) {
-    console.error("Classification error:", error);
-    // On failure, if there's history, assume legal follow-up
-    if (history.length > 0) {
-      return { decision: "LEGAL", confidence: 0.5, reason: "classification_failed_follow_up" };
-    }
-    return { decision: "NEEDS_CLARIFICATION", confidence: 0.0, reason: "classification_failed" };
-  }
-};
-
-/* ------------------------------------------------------------------ */
-/*  System prompts (all Moroccan law, not just family)                 */
-/* ------------------------------------------------------------------ */
-const buildSystemPrompt = (lang: Lang, hasHistory: boolean): string => {
-  const historyNote = hasHistory
-    ? "\nThis is an ongoing conversation. The user may be answering your follow-up questions or providing additional details. Interpret their messages in the context of the conversation.\n"
+const buildSystemPrompt = (lang: Lang, isFollowUp: boolean): string => {
+  const historyNote = isFollowUp
+    ? (lang === "ar" || lang === "darija"
+        ? "\nهذه محادثة مستمرة. فسّر رسالة المستخدم في سياق التبادل السابق.\n"
+        : "\nThis is an ongoing conversation. Interpret the user's message in the context of the previous exchange.\n")
     : "";
 
-  const base: Record<Lang, string> = {
-    fr:
-      "Vous êtes AI-Mizan, assistant expert en droit marocain.\n" +
-      "Vous couvrez : Code de la Famille (Moudawana), Code Pénal, Dahir des Obligations et Contrats (DOC), Code de Procédure Civile.\n" +
-      historyNote +
-      "\nRÈGLES CRITIQUES :\n" +
-      "1. Répondez UNIQUEMENT à partir des articles fournis dans le contexte juridique. NE JAMAIS inventer d'article ou de loi.\n" +
-      "2. Si le contexte est insuffisant, dites-le et posez 1 à 2 questions de clarification.\n" +
-      "3. Citez TOUJOURS les articles spécifiques que vous utilisez.\n" +
-      "\nFORMAT (texte brut, pas de Markdown) :\n" +
-      "Résumé : phrase synthétique.\n" +
-      "Fondements juridiques :\n- ...\n" +
-      "Droits et obligations :\n- ...\n" +
-      "Étapes suivantes :\n- ...\n" +
-      "Citations: CODE Art N (Source, YYYY-MM-DD); CODE Art N (...)\n" +
-      "\nREMPLACEZ CODE par le nom du code (family, penal, obligations, civil_procedure).\n" +
-      "LANGUE : Répondez en français.",
-    en:
-      "You are AI-Mizan, an expert Moroccan law assistant.\n" +
-      "You cover: Family Code (Moudawana), Penal Code, Obligations & Contracts (DOC), Civil Procedure Code.\n" +
-      historyNote +
-      "\nCRITICAL RULES:\n" +
-      "1. Answer ONLY using the articles provided in the legal context below. NEVER invent articles or laws.\n" +
-      "2. If the context is insufficient, say so and ask 1–2 clarifying questions.\n" +
-      "3. ALWAYS cite the specific articles you reference.\n" +
-      "\nFORMAT (plain text, no Markdown):\n" +
-      "Summary: one-sentence overview.\n" +
-      "Legal Grounds:\n- ...\n" +
-      "Rights & Obligations:\n- ...\n" +
-      "Next Steps:\n- ...\n" +
-      "Citations: CODE Art N (Source, YYYY-MM-DD); CODE Art N (...)\n" +
-      "\nREPLACE CODE with the law code name (family, penal, obligations, civil_procedure).\n" +
-      "LANGUAGE: Respond in English.",
-    ar:
-      "أنت AI-Mizan، مساعد خبير في القانون المغربي.\n" +
-      "تغطي: مدونة الأسرة، القانون الجنائي، قانون الالتزامات والعقود، قانون المسطرة المدنية.\n" +
-      historyNote +
-      "\nقواعد حرجة:\n" +
-      "1. أجب حصراً من المواد القانونية المزوّدة في السياق. لا تخترع مواد أو قوانين أبداً.\n" +
-      "2. إذا كان السياق غير كافٍ، قل ذلك واطرح سؤالاً أو سؤالين للتوضيح.\n" +
-      "3. استشهد دائماً بالمواد المحددة.\n" +
-      "\nالتنسيق (نص عادي بدون Markdown):\n" +
-      "الخلاصة: جملة موجزة.\n" +
-      "الأسس القانونية:\n- ...\n" +
-      "الحقوق والالتزامات:\n- ...\n" +
-      "الخطوات التالية:\n- ...\n" +
-      "Citations: CODE Art N (Source, YYYY-MM-DD); CODE Art N (...)\n" +
-      "\nاستبدل CODE باسم القانون (family, penal, obligations, civil_procedure).\n" +
-      "اللغة: أجب بالعربية.",
-    darija:
-      "نتا AI-Mizan، مساعد خبير فالقانون المغربي.\n" +
-      "تغطي: مدونة الأسرة، القانون الجنائي، قانون الالتزامات والعقود، المسطرة المدنية.\n" +
-      historyNote +
-      "\nقواعد مهمة بزاف:\n" +
-      "1. جاوب غير من المواد القانونية لي عندك فالسياق. ما تخترعش مواد ولا قوانين.\n" +
-      "2. إلا ماكانش السياق كافي، قول هادشي و سَوّل 1 ولا 2 ديال الأسئلة.\n" +
-      "3. ديما استشهد بالمواد المحددة.\n" +
-      "\nالتنسيق (نص عادي بلا Markdown):\n" +
-      "الملخص: جملة قصيرة.\n" +
-      "الأسس القانونية:\n- ...\n" +
-      "الحقوق والواجبات:\n- ...\n" +
-      "الخطوات الجاية:\n- ...\n" +
-      "Citations: CODE Art N (Source, YYYY-MM-DD); CODE Art N (...)\n" +
-      "\nبدل CODE باسم القانون (family, penal, obligations, civil_procedure).\n" +
-      "اللغة: جاوب بالدارجة (حروف عربية)، خلي المصطلحات القانونية واضحة."
+  const disclaimer: Record<Lang, string> = {
+    fr: "IMPORTANT : Vous fournissez des INFORMATIONS JURIDIQUES uniquement — ce que dit la loi — et NON des conseils juridiques. Terminez toujours votre réponse par : « ⚠️ Ces informations sont à titre informatif uniquement et ne constituent pas un conseil juridique. Consultez un avocat agréé pour votre situation. »",
+    en: "IMPORTANT: You provide LEGAL INFORMATION only — what the law says — and NOT legal advice. Always end your response with: « ⚠️ This information is for informational purposes only and does not constitute legal advice. Consult a licensed lawyer for your specific situation. »",
+    ar: "مهم: أنت تقدم معلومات قانونية فقط — ما تنص عليه القوانين — وليس استشارة قانونية. أنهِ دائماً ردّك بـ: « ⚠️ هذه المعلومات للتثقيف القانوني فقط ولا تُغني عن استشارة محامٍ مرخص. »",
+    darija: "مهم: كتعطي غير معلومات قانونية — شنو كيقول القانون — مشي استشارة قانونية. دائماً سالي الجواب ديالك بـ: « ⚠️ هاد المعلومات للتثقيف القانوني فقط وما تغنيش على مشاورة محامي. »",
   };
 
-  return base[lang] ?? base.fr;
+  const format: Record<Lang, string> = {
+    fr:
+      "FORMAT OBLIGATOIRE (texte brut, AUCUN Markdown, AUCUNE étoile) :\n" +
+      "Résumé: [réponse directe en 1-2 phrases]\n\n" +
+      "Fondements juridiques:\n- [numéro d'article exact et ce qu'il dit]\n- ...\n\n" +
+      "Droits et obligations:\n- ...\n\n" +
+      "Étapes suivantes:\n1. ...\n2. ...\n\n" +
+      "Citations: CODE Art N; CODE Art N\n\n" +
+      "(CODE = family | penal | obligations | civil_procedure | labor_code | commerce_code | urbanism_code)",
+    en:
+      "MANDATORY FORMAT (plain text, NO Markdown, NO asterisks):\n" +
+      "Summary: [direct answer in 1-2 sentences]\n\n" +
+      "Legal Grounds:\n- [exact article number and what it says]\n- ...\n\n" +
+      "Rights & Obligations:\n- ...\n\n" +
+      "Next Steps:\n1. ...\n2. ...\n\n" +
+      "Citations: CODE Art N; CODE Art N\n\n" +
+      "(CODE = family | penal | obligations | civil_procedure | labor_code | commerce_code | urbanism_code)",
+    ar:
+      "التنسيق الإلزامي (نص عادي، بدون Markdown، بدون نجوم):\n" +
+      "الخلاصة: [جواب مباشر في جملة أو جملتين]\n\n" +
+      "الأسس القانونية:\n- [رقم المادة بالضبط وما تنص عليه]\n- ...\n\n" +
+      "الحقوق والالتزامات:\n- ...\n\n" +
+      "الخطوات التالية:\n1. ...\n2. ...\n\n" +
+      "Citations: CODE Art N; CODE Art N\n\n" +
+      "(CODE = family | penal | obligations | civil_procedure | labor_code | commerce_code | urbanism_code)",
+    darija:
+      "التنسيق الإلزامي (نص عادي، بلا Markdown، بلا نجوم):\n" +
+      "الملخص: [جواب مباشر فجملة ولا جملتين]\n\n" +
+      "الأسس القانونية:\n- [رقم المادة بالضبط وشنو كتقول]\n- ...\n\n" +
+      "الحقوق والواجبات:\n- ...\n\n" +
+      "الخطوات الجاية:\n1. ...\n2. ...\n\n" +
+      "Citations: CODE Art N; CODE Art N\n\n" +
+      "(CODE = family | penal | obligations | civil_procedure | labor_code | commerce_code | urbanism_code)",
+  };
+
+  const rules: Record<Lang, string> = {
+    fr:
+      `Vous êtes AI-Mizan, un assistant d'information juridique spécialisé dans le droit marocain (${LEGAL_CODES}).${historyNote}\n` +
+      "RÈGLES STRICTES :\n" +
+      "1. Répondez UNIQUEMENT en vous basant sur les articles fournis dans le contexte ci-dessous. NE JAMAIS inventer ou extrapoler des articles ou numéros qui ne figurent pas dans le contexte.\n" +
+      "2. Si les articles fournis ne couvrent pas la question, dites-le explicitement : « Les articles disponibles ne traitent pas directement de ce cas. »\n" +
+      "3. Citez toujours les numéros d'articles exacts.\n" +
+      "4. Mentionnez les délais légaux si présents dans les articles (prescription, recours).\n" +
+      "5. " + disclaimer.fr + "\n\n" + format.fr,
+    en:
+      `You are AI-Mizan, a legal information assistant specializing in Moroccan law (${LEGAL_CODES}).${historyNote}\n` +
+      "STRICT RULES:\n" +
+      "1. Answer ONLY based on the articles provided in the context below. NEVER invent or extrapolate articles or numbers not present in the context.\n" +
+      "2. If the provided articles do not cover the question, state explicitly: « The available articles do not directly address this case. »\n" +
+      "3. Always cite exact article numbers.\n" +
+      "4. Mention legal deadlines if present in the articles (prescription, appeals).\n" +
+      "5. " + disclaimer.en + "\n\n" + format.en,
+    ar:
+      `أنت AI-Mizan، مساعد للمعلومات القانونية متخصص في القانون المغربي (${LEGAL_CODES}).${historyNote}\n` +
+      "قواعد صارمة:\n" +
+      "1. أجب حصراً بناءً على المواد المقدمة في السياق أدناه. لا تخترع أبداً مواداً أو أرقاماً غير موجودة في السياق.\n" +
+      "2. إذا لم تغطِّ المواد المتاحة السؤالَ، صرّح بذلك صراحةً: « المواد المتاحة لا تتناول هذه الحالة مباشرةً. »\n" +
+      "3. استشهد دائماً بأرقام المواد الدقيقة.\n" +
+      "4. اذكر المواعيد القانونية إذا وردت في المواد (تقادم، طعن).\n" +
+      "5. " + disclaimer.ar + "\n\n" + format.ar,
+    darija:
+      `نتا AI-Mizan، مساعد للمعلومات القانونية متخصص فالقانون المغربي (${LEGAL_CODES}).${historyNote}\n` +
+      "قواعد صارمة:\n" +
+      "1. جاوب غير من المواد لي عندك فالسياق. ما تخترعش أبداً مواد ولا أرقام ماكاينش فالسياق.\n" +
+      "2. إلا المواد المتاحة ما كتغطيش السؤال، قول بصراحة: « المواد المتاحة ما كتتكلمش بشكل مباشر على هاد الحالة. »\n" +
+      "3. ديما استشهد بأرقام المواد الصحيحة.\n" +
+      "4. ذكر المواعيد القانونية إلا كانت فالمواد.\n" +
+      "5. " + disclaimer.darija + "\n\n" + format.darija,
+  };
+
+  return rules[lang] ?? rules.fr;
 };
+
+/* ------------------------------------------------------------------ */
+/*  Citation extraction                                                */
+/* ------------------------------------------------------------------ */
+
+const extractCitations = (answer: string, articles: any[]): any[] => {
+  const found: Array<{ code: string; num: string }> = [];
+
+  // Match "CODE Art N" or "CODE Article N"
+  const codeRegex = /(family|penal|obligations|civil_procedure|labor_code|commerce_code|urbanism_code)\s*Art(?:icle)?\s*(\d+)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = codeRegex.exec(answer)) !== null) {
+    found.push({ code: m[1].toLowerCase(), num: m[2] });
+  }
+
+  // Match generic "Article N" or "Art N" → associate with retrieved articles
+  const genericRegex = /(?<![A-Za-z])Art(?:icle)?\s+(\d+)(?!\d)/gi;
+  while ((m = genericRegex.exec(answer)) !== null) {
+    const num = m[1];
+    if (!found.some((c) => c.num === num)) {
+      const match = articles.find((a) => String(a.articleNumber) === num);
+      if (match) found.push({ code: match.code, num });
+    }
+  }
+
+  const finalCitations = found.length > 0
+    ? articles.filter((a) =>
+        found.some((c) => c.num === String(a.articleNumber) && c.code === a.code)
+      )
+    : articles.slice(0, 3);
+
+  return finalCitations.map((a: any) => ({
+    code: a.code,
+    articleNumber: a.articleNumber,
+    source: a.source,
+    effectiveDate: a.effectiveDate ? new Date(a.effectiveDate).toISOString().slice(0, 10) : null,
+    language: a.language,
+    score: a.score ?? null,
+  }));
+};
+
+/* ------------------------------------------------------------------ */
+/*  SSE helpers                                                        */
+/* ------------------------------------------------------------------ */
+
+const enc = new TextEncoder();
+
+const sseEvent = (data: Record<string, unknown>) =>
+  enc.encode(`data: ${JSON.stringify(data)}\n\n`);
+
+/** Returns a JSON response for instant (non-streaming) cases. */
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 
 /* ------------------------------------------------------------------ */
 /*  Main handler                                                       */
 /* ------------------------------------------------------------------ */
+
 export const POST = async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = chatRequestSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  if (!parsed.success)
+    return jsonResponse({ error: "Invalid request" }, 400);
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 
   const allowed = await checkRateLimit(ip);
-  if (!allowed) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  if (!allowed)
+    return jsonResponse({ error: "Rate limit exceeded. Please wait a moment." }, 429);
 
   const { question, context, language: requestedLanguage, history: rawHistory } = parsed.data;
-  const history: HistoryMessage[] = (rawHistory ?? []).map((m) => ({
+  const history = (rawHistory ?? []).map((m) => ({
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
   const isFollowUp = history.length > 0;
 
-  // Detect language from the question itself
+  // Detect language
   const questionLang = detectLanguage(question);
-  const userLang = questionLang !== "fr" ? questionLang : (requestedLanguage as Lang) || "fr";
+  const userLang: Lang =
+    questionLang !== "fr" ? questionLang : ((requestedLanguage as Lang) || "fr");
 
-  console.log(`[AI-Mizan] Q: "${question.slice(0, 60)}…" | Lang: ${userLang} | Follow-up: ${isFollowUp} | History: ${history.length} msgs`);
+  console.log(
+    `[AI-Mizan] Q: "${question.slice(0, 60)}…" | lang=${userLang} | followUp=${isFollowUp}`
+  );
 
-  // 1) Exact smalltalk match — skip for follow-ups (could be a real answer)
-  if (!isFollowUp && isSmalltalk(question)) {
-    const answer = smalltalkReply(userLang);
-    try {
-      await prisma.chatQuery.create({
-        data: { question, answer, grounded: false, ip, userAgent: hdrs.get("user-agent") || undefined }
-      });
-    } catch { /* ignore */ }
-    return NextResponse.json({ answer, citations: [], grounded: false, model_used: "smalltalk", retrieved_count: 0, language: userLang });
-  }
+  // ── Step 1: Fast classification (zero API calls) ─────────────────
+  const fastResult = fastRoute(question);
 
-  // 2) Classify (fast-route + LLM with conversation history)
-  const cls = await classifyWithApi(question, userLang, history);
-  const lowConfidence = cls.confidence < Number(process.env.GATE_LOW_CONFIDENCE || "0.55");
+  if (fastResult === "UNSAFE")
+    return jsonResponse({ answer: instant("unsafe", userLang), citations: [], grounded: false, question_type: "UNSAFE", language: userLang });
 
-  if (cls.decision === "UNSAFE") {
-    return NextResponse.json({
-      answer: buildUnsafeMessage(userLang),
-      citations: [],
-      grounded: false,
-      model_used: "gate-unsafe",
-      question_type: "UNSAFE",
-      classifier: cls,
-      language: userLang
-    });
-  }
+  if (fastResult === "SMALLTALK" && !isFollowUp)
+    return jsonResponse({ answer: instant("smalltalk", userLang), citations: [], grounded: false, question_type: "SMALLTALK", language: userLang });
 
-  if (cls.decision === "NON_LEGAL" && !lowConfidence) {
-    const answer = buildLegalOnlyMessage(userLang);
-    try {
-      await prisma.chatQuery.create({
-        data: { question, answer, grounded: false, ip, userAgent: hdrs.get("user-agent") || undefined }
-      });
-    } catch { /* ignore */ }
-    return NextResponse.json({
-      answer,
-      citations: [],
-      grounded: false,
-      error: "non_legal_question",
-      model_used: "gate-non-legal",
-      question_type: "NON_LEGAL",
-      classifier: cls,
-      language: userLang
-    });
-  }
+  if (fastResult === "NON_LEGAL" && !isFollowUp)
+    return jsonResponse({ answer: instant("nonLegal", userLang), citations: [], grounded: false, question_type: "NON_LEGAL", language: userLang });
 
-  if (cls.decision === "NEEDS_CLARIFICATION" || (cls.decision === "NON_LEGAL" && lowConfidence)) {
-    const prompts = buildClarifyPrompts(userLang);
-    try {
-      await prisma.chatQuery.create({
-        data: { question, answer: prompts.join("\n"), grounded: false, ip, userAgent: hdrs.get("user-agent") || undefined }
-      });
-    } catch { /* ignore */ }
-    return NextResponse.json({
-      clarify: true,
-      prompts,
-      grounded: false,
-      model_used: "gate-clarify",
-      question_type: "NEEDS_CLARIFICATION",
-      classifier: cls,
-      language: userLang
-    });
-  }
-
-  // 3) LEGAL → Retrieval (search ALL codes, not just family)
+  // ── Step 2: Retrieval (embedding + vector + keyword fallback) ─────
   const TOP_K = Number.parseInt(process.env.RETRIEVE_TOP_K || "8", 10) || 8;
 
-  // Build augmented search query for follow-ups
+  // For follow-ups, augment the query with recent context
   let searchQuery = question;
   if (isFollowUp) {
-    // Combine recent user questions + current question for better embedding context
-    const recentContext = history
+    const recentUserMsgs = history
       .slice(-4)
       .filter((m) => m.role === "user")
       .map((m) => m.content)
       .join(" ");
-    searchQuery = `${recentContext} ${question}`.trim();
+    searchQuery = `${recentUserMsgs} ${question}`.trim();
   }
 
-  // Query expansion (cached for 7 days — amortized cost is low)
-  const expansions = await generateQueryExpansions(searchQuery, userLang);
+  // Topic keywords (rule-based, free)
+  const topicKeywords = getTopicKeywords(searchQuery);
 
-  let embedding: number[] | null = null;
+  // Embedding (1 API call or free local hash)
+  let embedding: number[] = [];
   try {
     embedding = await createEmbedding(searchQuery);
   } catch {
-    embedding = null;
+    embedding = [];
   }
 
+  // Vector search
   let articles: any[] = [];
-  if (embedding) {
+  if (embedding.length) {
     try {
-      articles = await retrieveWithExpansions(embedding, expansions, createEmbedding, TOP_K);
-
-      // Prefer articles in the user's language when we have enough
-      const sameLanguageArticles = articles.filter((a) => a.language === userLang);
-      if (sameLanguageArticles.length >= 3) {
-        articles = sameLanguageArticles;
-      }
-
-      console.log(`[AI-Mizan] Vector search: ${articles.length} articles across codes: ${[...new Set(articles.map((a: any) => a.code))].join(", ")}`);
-    } catch (error) {
-      console.error("Retrieval error:", error);
+      articles = await retrieveRelevantArticles(embedding, TOP_K);
+      // Prefer user's language if enough results
+      const sameLang = articles.filter((a) => a.language === userLang);
+      if (sameLang.length >= 3) articles = sameLang;
+    } catch {
       articles = [];
     }
   }
 
-  // 4) Keyword fallback if vector search returned nothing
+  // Keyword fallback if vector search found nothing
   if (articles.length === 0) {
-    console.log(`[AI-Mizan] Vector search returned 0, trying keyword fallback…`);
     try {
-      articles = await keywordFallback([searchQuery, ...expansions], TOP_K);
-      articles = preferLanguage(articles, userLang)
-        .sort((a, b) => Number(a.articleNumber) - Number(b.articleNumber))
-        .slice(0, TOP_K)
-        .map((a: any) => ({ ...a, score: a.score ?? 1 }));
+      const fallback = await keywordFallback([searchQuery, ...topicKeywords], TOP_K);
+      const sameLang = fallback.filter((a: any) => a.language === userLang);
+      articles = (sameLang.length >= 3 ? sameLang : fallback).slice(0, TOP_K);
     } catch {
       articles = [];
     }
   }
 
   console.log(
-    `[AI-Mizan] Final: ${articles.length} articles: ${articles.map((a: any) => `${a.code} Art.${a.articleNumber}`).join(", ")}`
+    `[AI-Mizan] Retrieved ${articles.length} articles: ${articles.map((a: any) => `${a.code} Art.${a.articleNumber}`).join(", ")}`
   );
 
+  // If still nothing found, return clarification request
   if (articles.length === 0) {
-    const prompts = buildClarifyPrompts(userLang);
-    return NextResponse.json({
+    return jsonResponse({
+      answer: instant("clarify", userLang),
       clarify: true,
-      prompts,
+      citations: [],
       grounded: false,
-      model_used: "no-articles-clarify",
-      question_type: "NEEDS_CLARIFICATION",
-      classifier: cls,
-      retrieved_count: 0,
-      language: userLang
+      question_type: "NO_RESULTS",
+      language: userLang,
     });
   }
 
-  // 5) Build context and call LLM (single response call)
+  // ── Step 3: Build LLM messages ────────────────────────────────────
   const lawContext = articles
-    .map((article, index) => {
+    .map((article, i) => {
       const eff = article.effectiveDate
         ? new Date(article.effectiveDate).toISOString().slice(0, 10)
-        : "unknown";
-      const codeName = CODE_NAMES[article.code] || article.code;
+        : "N/A";
       return (
-        `(${index + 1}) ${article.code} Article ${article.articleNumber} ` +
-        `[${codeName}] [${article.language}] Source: ${article.source} Effective: ${eff}\n` +
-        `${String(article.text || "").slice(0, 700)}`
+        `(${i + 1}) ${article.code} Article ${article.articleNumber} ` +
+        `[lang:${article.language}] [source:${article.source}] [date:${eff}]\n` +
+        String(article.text || "").slice(0, 600)
       );
     })
-    .join("\n\n");
+    .join("\n\n---\n\n");
 
   const systemPrompt = buildSystemPrompt(userLang, isFollowUp);
+  const llmMessages: DeepSeekMessage[] = [{ role: "system", content: systemPrompt }];
 
-  // Build LLM messages with conversation history
-  const llmMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-    { role: "system", content: systemPrompt },
-  ];
-
-  // Include recent conversation history (last 10 messages max)
+  // Include recent conversation history (last 6 messages)
   if (isFollowUp) {
-    const recentHistory = history.slice(-10);
-    for (const msg of recentHistory) {
+    for (const msg of history.slice(-6)) {
       llmMessages.push({ role: msg.role, content: msg.content });
     }
   }
 
-  // Current user message with legal context
   const userPrompt =
-    `User question: ${question}\n\n` +
-    (context ? `User context: ${context}\n\n` : "") +
-    `Legal context (articles from the database — answer ONLY from these):\n${lawContext}`;
+    `Question: ${question}\n\n` +
+    (context ? `Additional context: ${context}\n\n` : "") +
+    `Legal context (answer ONLY from these articles — do not use any other source):\n${lawContext}`;
 
   llmMessages.push({ role: "user", content: userPrompt });
 
-  let answer = "";
-  let modelUsed: string = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  // ── Step 4: Stream the answer ─────────────────────────────────────
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = writable.getWriter();
 
-  try {
-    answer = await generateDeepSeekResponse(llmMessages);
-
-    if (!answer || answer.trim() === "") throw new Error("Empty model response");
-    // Strip markdown formatting
-    answer = answer.replace(/\*\*(.*?)\*\*/g, "$1").replace(/^#+\s*/gm, "").trim();
-  } catch {
-    // Fallback: citation-only response
-    const citeLine = articles
-      .slice(0, 3)
-      .map((a) => {
-        const eff = a.effectiveDate ? new Date(a.effectiveDate).toISOString().slice(0, 10) : "unknown";
-        return `${a.code} Art ${a.articleNumber} (${a.source}, ${eff})`;
-      })
-      .join("; ");
-
-    answer =
-      "Model temporarily unavailable.\n" +
-      "Citations: " + citeLine + "\n" +
-      "This information is for general legal guidance only and does not constitute legal advice.";
-    modelUsed = "local-extractive-fallback";
-  }
-
-  // 6) Extract citations from response → match to retrieved articles
-  // Match patterns like: family Art 123, penal Art 456, etc.
-  const citedNumbers: Array<{ code: string; num: string }> = [];
-  const citeRegex = /(family|penal|obligations|civil_procedure)\s*Art(?:icle)?\s*(\d+)/gi;
-  let match: RegExpExecArray | null;
-  while ((match = citeRegex.exec(answer)) !== null) {
-    citedNumbers.push({ code: match[1].toLowerCase(), num: match[2] });
-  }
-  // Also match generic "Article N" and associate with retrieved articles
-  const genericArtRegex = /(?<![\w])Art(?:icle)?\s+(\d+)(?!\d)/gi;
-  while ((match = genericArtRegex.exec(answer)) !== null) {
-    const num = match[1];
-    // If not already captured via code-prefixed pattern, add from retrieved articles
-    if (!citedNumbers.some((c) => c.num === num)) {
-      const found = articles.find((a) => String(a.articleNumber) === num);
-      if (found) {
-        citedNumbers.push({ code: found.code, num });
+  // Fire streaming in background (don't await — response is already returned)
+  (async () => {
+    let fullAnswer = "";
+    try {
+      for await (const chunk of streamDeepSeek(llmMessages)) {
+        // Strip stray markdown bold (**) and headings (#) as they stream
+        const clean = chunk.replace(/\*\*/g, "").replace(/^#+\s*/gm, "");
+        fullAnswer += clean;
+        await writer.write(sseEvent({ type: "chunk", text: clean }));
       }
+
+      // Extract citations from completed answer
+      const citations = extractCitations(fullAnswer, articles);
+
+      // Persist to DB (fire and forget)
+      prisma.chatQuery
+        .create({
+          data: {
+            question,
+            answer: fullAnswer,
+            grounded: true,
+            ip,
+            userAgent: hdrs.get("user-agent") || undefined,
+          },
+        })
+        .then(async (qrow) => {
+          if (citations.length > 0) {
+            await prisma.chatCitation.createMany({
+              data: citations.map((c: any) => ({
+                chatQueryId: qrow.id,
+                articleId: articles.find(
+                  (a: any) => a.code === c.code && String(a.articleNumber) === String(c.articleNumber)
+                )?.id ?? "",
+                code: c.code,
+                articleNumber: c.articleNumber,
+              })),
+            });
+          }
+        })
+        .catch((e) => console.error("[AI-Mizan] DB log failed:", e));
+
+      // Done event — send citations and metadata
+      await writer.write(
+        sseEvent({
+          type: "done",
+          citations,
+          grounded: true,
+          question_type: "LEGAL",
+          language: userLang,
+          retrieved_count: articles.length,
+        })
+      );
+    } catch (err) {
+      console.error("[AI-Mizan] Streaming error:", err);
+      // Send a fallback answer with the retrieved articles' article numbers
+      const fallbackText = instant("clarify", userLang);
+      await writer.write(sseEvent({ type: "chunk", text: fullAnswer || fallbackText }));
+      await writer.write(sseEvent({ type: "done", citations: [], grounded: false, language: userLang }));
+    } finally {
+      await writer.close();
     }
-  }
+  })();
 
-  const finalCitations =
-    citedNumbers.length > 0
-      ? articles.filter((a) =>
-          citedNumbers.some((c) => c.num === String(a.articleNumber) && c.code === a.code)
-        )
-      : articles.slice(0, 3);
-
-  // 7) Log to database
-  let queryId: string | null = null;
-  try {
-    const qrow = await prisma.chatQuery.create({
-      data: { question, answer, grounded: true, ip, userAgent: hdrs.get("user-agent") || undefined }
-    });
-    queryId = qrow.id;
-
-    if (finalCitations.length > 0) {
-      await prisma.chatCitation.createMany({
-        data: finalCitations.map((a: any) => ({
-          chatQueryId: qrow.id,
-          articleId: a.id,
-          code: a.code,
-          articleNumber: a.articleNumber
-        }))
-      });
-    }
-  } catch (dbErr) {
-    console.error("[AI-Mizan] DB logging failed:", dbErr);
-  }
-
-  return NextResponse.json({
-    answer,
-    citations: finalCitations.map((a: any) => ({
-      code: a.code,
-      articleNumber: a.articleNumber,
-      source: a.source,
-      effectiveDate: a.effectiveDate ? new Date(a.effectiveDate).toISOString().slice(0, 10) : null,
-      language: a.language,
-      score: a.score ?? null
-    })),
-    grounded: true,
-    queryId,
-    model_used: modelUsed,
-    retrieved_count: articles.length,
-    classifier: cls,
-    question_type: cls.decision,
-    language: userLang
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 };

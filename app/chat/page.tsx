@@ -172,8 +172,6 @@ const ChatPage = () => {
     below?: boolean;
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const streamTimerRef = useRef<number | null>(null);
-  const streamTimeoutRef = useRef<number | null>(null);
   const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tooltipHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -637,12 +635,8 @@ const ChatPage = () => {
 
   useEffect(() => {
     return () => {
-      if (copyFeedbackTimeoutRef.current) {
-        clearTimeout(copyFeedbackTimeoutRef.current);
-      }
-      if (tooltipHideTimeoutRef.current) {
-        clearTimeout(tooltipHideTimeoutRef.current);
-      }
+      if (copyFeedbackTimeoutRef.current) clearTimeout(copyFeedbackTimeoutRef.current);
+      if (tooltipHideTimeoutRef.current) clearTimeout(tooltipHideTimeoutRef.current);
     };
   }, []);
 
@@ -1558,117 +1552,73 @@ const ChatPage = () => {
     }
   }, [conversations, openMenuId]);
 
-  useEffect(() => {
-    return () => {
-      if (streamTimerRef.current) {
-        window.clearInterval(streamTimerRef.current);
-      }
-      if (streamTimeoutRef.current) {
-        window.clearTimeout(streamTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const streamAssistantMessage = (
-    text: string,
-    citations: Array<{ code: string; articleNumber: string }> ,
-    isRejected: boolean = false,
-    baseMessages: ChatMessage[] = messages,
-    language?: SupportedLanguage
-  ) => {
-    if (streamTimerRef.current) {
-      window.clearInterval(streamTimerRef.current);
-    }
-    if (streamTimeoutRef.current) {
-      window.clearTimeout(streamTimeoutRef.current);
-    }
-
-    const safeText = text?.trim() ? text : dict.chatError;
-
-    setIsTyping(true);
-    const newMessages = [
-      ...baseMessages,
-      {
-        role: "assistant",
-        content: "",
-        citations,
-        isRejected,
-        language,
-      }
-    ];
-    updateConversation(currentConversationId!, { messages: newMessages as ChatMessage[] });
-
-    let index = 0;
-    streamTimerRef.current = window.setInterval(() => {
-      index += 2;
-      setConversations((prev) => {
-        const convs = [...prev];
-        const convIndex = convs.findIndex(c => c.id === currentConversationId);
-        if (convIndex === -1) return prev;
-        const conv = convs[convIndex];
-        const nextMessages = [...conv.messages];
-        const last = nextMessages[nextMessages.length - 1];
-        if (!last || last.role !== "assistant") {
-          return prev;
-        }
-        nextMessages[nextMessages.length - 1] = {
-          ...last,
-          content: safeText.slice(0, index)
-        };
-        const newConv = { ...conv, messages: nextMessages };
-        const newConvs = [...convs];
-        newConvs[convIndex] = newConv;
-        return newConvs;
-      });
-
-      if (index >= safeText.length) {
-        if (streamTimerRef.current) {
-          window.clearInterval(streamTimerRef.current);
-        }
-        streamTimerRef.current = null;
-        if (streamTimeoutRef.current) {
-          window.clearTimeout(streamTimeoutRef.current);
-        }
-        streamTimeoutRef.current = null;
-        setIsTyping(false);
-      }
-    }, 20);
-
-    // Timeout based on text length (minimum 30s, +20ms per character for long responses)
-    const timeoutMs = Math.max(30000, safeText.length * 25);
-    streamTimeoutRef.current = window.setTimeout(() => {
-      if (streamTimerRef.current) {
-        window.clearInterval(streamTimerRef.current);
-      }
-      streamTimerRef.current = null;
-      streamTimeoutRef.current = null;
-      setIsTyping(false);
-    }, timeoutMs);
-  };
 
   const sendMessage = async () => {
-    if (loading || isTyping || !input.trim() || !currentConversationId) {
-      return;
-    }
+    if (loading || isTyping || !input.trim() || !currentConversationId) return;
 
     const questionLanguage = detectLanguage(input);
-    const userMessage: ChatMessage = { role: "user", content: input, language: questionLanguage };
+    const userMessage: ChatMessage = { role: "user", content: input.trim(), language: questionLanguage };
     const newMessages = [...messages, userMessage];
     updateConversation(currentConversationId, { messages: newMessages });
 
     if (messages.length === 0) {
-      const title = input.trim().slice(0, 50) + (input.length > 50 ? '...' : '');
+      const title = input.trim().slice(0, 50) + (input.length > 50 ? "…" : "");
       updateConversation(currentConversationId, { title });
     }
 
     setInput("");
     setLoading(true);
+    setIsTyping(true);
     setDebugInfo(null);
     const startTime = performance.now();
 
+    // Optimistically add an empty assistant message so the typing indicator appears
+    const assistantPlaceholder: ChatMessage = { role: "assistant", content: "", language: questionLanguage };
+    const convIdSnapshot = currentConversationId;
+    updateConversation(convIdSnapshot, { messages: [...newMessages, assistantPlaceholder] });
+
+    const appendChunk = (chunk: string) => {
+      setConversations((prev) => {
+        const convs = [...prev];
+        const idx = convs.findIndex((c) => c.id === convIdSnapshot);
+        if (idx === -1) return prev;
+        const conv = { ...convs[idx] };
+        const msgs = [...conv.messages];
+        const last = msgs[msgs.length - 1];
+        if (!last || last.role !== "assistant") return prev;
+        msgs[msgs.length - 1] = { ...last, content: last.content + chunk };
+        conv.messages = msgs;
+        convs[idx] = conv;
+        return convs;
+      });
+    };
+
+    const finishAssistantMessage = (
+      citations: ChatMessage["citations"],
+      isRejected: boolean,
+      lang: SupportedLanguage,
+      questionType: string | null
+    ) => {
+      setConversations((prev) => {
+        const convs = [...prev];
+        const idx = convs.findIndex((c) => c.id === convIdSnapshot);
+        if (idx === -1) return prev;
+        const conv = { ...convs[idx] };
+        const msgs = [...conv.messages];
+        const last = msgs[msgs.length - 1];
+        if (!last || last.role !== "assistant") return prev;
+        msgs[msgs.length - 1] = { ...last, citations, isRejected, language: lang };
+        conv.messages = msgs;
+        convs[idx] = conv;
+        return convs;
+      });
+      setLastQuestionType(questionType);
+      setLoading(false);
+      setIsTyping(false);
+    };
+
     try {
-      // Build conversation history for context-aware follow-ups
-      const historyMessages = newMessages.slice(0, -1).slice(-10).map((m) => ({
+      const historyMessages = newMessages.slice(0, -1).slice(-6).map((m) => ({
         role: m.role,
         content: m.content,
       }));
@@ -1680,73 +1630,109 @@ const ChatPage = () => {
           question: userMessage.content,
           language: questionLanguage,
           history: historyMessages,
-        })
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Chat request failed");
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const contentType = response.headers.get("content-type") ?? "";
+
+      // ── SSE streaming response (LEGAL questions) ──────────────────
+      if (contentType.includes("text/event-stream") && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let sseBuffer = "";
+        let receivedCitations: ChatMessage["citations"] = [];
+        let responseLang: SupportedLanguage = questionLanguage;
+        let questionType: string | null = null;
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            sseBuffer += decoder.decode(value, { stream: true });
+            const lines = sseBuffer.split("\n");
+            sseBuffer = lines.pop() ?? "";
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith("data:")) continue;
+              const payload = trimmed.slice(5).trim();
+              if (!payload || payload === "[DONE]") continue;
+
+              try {
+                const event = JSON.parse(payload) as {
+                  type: string;
+                  text?: string;
+                  citations?: ChatMessage["citations"];
+                  language?: string;
+                  question_type?: string;
+                  retrieved_count?: number;
+                };
+
+                if (event.type === "chunk" && event.text) {
+                  appendChunk(event.text);
+                } else if (event.type === "done") {
+                  receivedCitations = event.citations ?? [];
+                  responseLang = (event.language as SupportedLanguage) || questionLanguage;
+                  questionType = event.question_type ?? null;
+                  const processingTime = performance.now() - startTime;
+                  setDebugInfo({
+                    query: userMessage.content,
+                    questionType: questionType || "LEGAL",
+                    retrievedArticles: receivedCitations?.map((c) => ({ code: c.code, articleNumber: c.articleNumber })) ?? [],
+                    processingTime: Math.round(processingTime),
+                  });
+                }
+              } catch {
+                // ignore malformed SSE events
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        finishAssistantMessage(receivedCitations, false, responseLang, questionType);
+        return;
       }
 
+      // ── JSON response (instant: smalltalk / non-legal / clarify) ──
       const data = await response.json();
       const processingTime = performance.now() - startTime;
-      const citations = data.citations || [];
-      const qType = data.question_type || null;
-      const isRejected = data.error === "non_legal_question" || data.error === "no_citations_available";
-      setLastQuestionType(qType);
+      const citations: ChatMessage["citations"] = data.citations ?? [];
+      const qType: string | null = data.question_type ?? null;
+      const isRejected = ["NON_LEGAL", "UNSAFE"].includes(qType ?? "");
+      const responseLang: SupportedLanguage = (data.language as SupportedLanguage) || questionLanguage;
 
-      // Update debug info
       setDebugInfo({
         query: userMessage.content,
-        questionType: qType || 'unknown',
-        retrievedArticles: citations.map((c: { code: string; articleNumber: string; score?: number }) => ({
-          code: c.code,
-          articleNumber: c.articleNumber,
-          score: c.score
-        })),
+        questionType: qType ?? "unknown",
+        retrievedArticles: [],
         processingTime: Math.round(processingTime),
-        error: data.error || undefined
+        error: data.error,
       });
 
-      const sanitizedAnswer = typeof data.answer === "string" ? data.answer.trim() : "";
+      // Write the full answer at once (no streaming needed for instant responses)
+      const finalAnswer = typeof data.answer === "string" && data.answer.trim()
+        ? data.answer.trim()
+        : (dict.chatUnableToRespond || "Unable to respond.");
 
-      if (isRejected) {
-        const rejectionMessage = sanitizedAnswer || dict.chatNonLegalResponse || dict.chatUnableToRespond || "I can only answer Moroccan family-law questions.";
-        streamAssistantMessage(rejectionMessage, citations ?? [], true, newMessages, (data.language as SupportedLanguage) || questionLanguage);
-      } else if (data.clarify) {
-        const prompts: string[] = data.prompts || [];
-        const promptText = prompts.join("\n- ");
-        const clarifyPrefix = dict.chatClarifyQuestion || "Can you clarify:\n- ";
-        streamAssistantMessage(
-          `${clarifyPrefix}${promptText}`,
-          citations,
-          false,
-          newMessages,
-          (data.language as SupportedLanguage) || questionLanguage
-        );
-      } else {
-        const answer = sanitizedAnswer || dict.chatUnableToRespond || "Unable to respond.";
-        streamAssistantMessage(answer, citations, false, newMessages, (data.language as SupportedLanguage) || questionLanguage);
-      }
+      appendChunk(finalAnswer);
+      finishAssistantMessage(citations, isRejected, responseLang, qType);
+
     } catch (error) {
-      setIsTyping(false);
       const processingTime = performance.now() - startTime;
       setDebugInfo({
         query: userMessage.content,
-        questionType: 'error',
+        questionType: "error",
         processingTime: Math.round(processingTime),
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : "Unknown error",
       });
-      const errorMessages = [
-        ...messages,
-        {
-          role: "assistant",
-          content: dict.chatError,
-          language: questionLanguage
-        }
-      ];
-      updateConversation(currentConversationId!, { messages: errorMessages as ChatMessage[] });
-    } finally {
-      setLoading(false);
+      // Replace placeholder with error message
+      appendChunk(dict.chatError || "An error occurred. Please try again.");
+      finishAssistantMessage([], false, questionLanguage, "error");
     }
   };
 
@@ -1895,22 +1881,113 @@ const ChatPage = () => {
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 chat-scroll bg-gray-50">
             {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center max-w-md">
-                  <div className="mb-6">
-                    <Image
-                      src="/ai-mizan-logo.png"
-                      alt="AI-Mizan"
-                      width={100}
-                      height={100}
-                      className="mx-auto opacity-40"
-                    />
+              <div className="flex items-center justify-center min-h-full py-8">
+                <div className="w-full max-w-2xl space-y-6">
+                  {/* Welcome Header */}
+                  <div className="text-center space-y-3">
+                    <div className="mx-auto w-16 h-16 rounded-2xl bg-green-50 border-2 border-green-100 flex items-center justify-center shadow-sm">
+                      <Image src="/ai-mizan-logo.png" alt="AI-Mizan" width={40} height={40} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      {dict.chatWelcome || (isRTL ? "مرحبًا بك في AI-Mizan" : "Welcome to AI-Mizan")}
+                    </h2>
+                    <p className="text-sm text-slate-500 max-w-md mx-auto">
+                      {dict.chatWelcomeSubtitle || (isRTL
+                        ? "اطرح سؤالك القانوني وسأجيبك استناداً إلى القانون المغربي الرسمي مع الإشارة إلى المواد القانونية."
+                        : "Ask your legal question and I'll answer based on official Moroccan law, citing exact articles."
+                      )}
+                    </p>
                   </div>
-                  <h2 className="text-2xl font-semibold text-slate-800 mb-3">
-                    {dict.chatWelcome || "Welcome to AI-Mizan"}
-                  </h2>
-                  <p className="text-slate-600">
-                    {dict.chatWelcomeSubtitle || "Ask a question about Moroccan family law"}
+
+                  {/* Suggested Questions Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      {
+                        icon: "👨‍👩‍👧",
+                        topicAr: "الأسرة",
+                        topicFr: "Famille",
+                        topicEn: "Family",
+                        qAr: "ما هي شروط الطلاق في القانون المغربي؟",
+                        qFr: "Quelles sont les conditions du divorce au Maroc ?",
+                        qEn: "What are the conditions for divorce in Morocco?",
+                      },
+                      {
+                        icon: "🏠",
+                        topicAr: "الإيجار",
+                        topicFr: "Logement",
+                        topicEn: "Housing",
+                        qAr: "ما هي حقوق المستأجر عند إنهاء عقد الإيجار؟",
+                        qFr: "Quels sont les droits du locataire en fin de bail ?",
+                        qEn: "What are tenant rights at end of a rental contract?",
+                      },
+                      {
+                        icon: "💼",
+                        topicAr: "العمل",
+                        topicFr: "Travail",
+                        topicEn: "Labor",
+                        qAr: "كيف يُحسب تعويض الفصل التعسفي في المغرب؟",
+                        qFr: "Comment est calculée l'indemnité de licenciement au Maroc ?",
+                        qEn: "How is severance pay calculated in Morocco?",
+                      },
+                      {
+                        icon: "📜",
+                        topicAr: "الميراث",
+                        topicFr: "Héritage",
+                        topicEn: "Inheritance",
+                        qAr: "كيف تُوزَّع التركة بين الورثة في القانون المغربي؟",
+                        qFr: "Comment l'héritage est-il réparti entre héritiers selon la loi marocaine ?",
+                        qEn: "How is inheritance distributed among heirs in Moroccan law?",
+                      },
+                      {
+                        icon: "🚗",
+                        topicAr: "حوادث السير",
+                        topicFr: "Accidents",
+                        topicEn: "Accidents",
+                        qAr: "ما هي حقوق المتضرر في حوادث السير بالمغرب؟",
+                        qFr: "Quels sont les droits de la victime d'un accident de la route ?",
+                        qEn: "What are accident victim rights in Morocco?",
+                      },
+                      {
+                        icon: "🏛️",
+                        topicAr: "العقارات",
+                        topicFr: "Immobilier",
+                        topicEn: "Real Estate",
+                        qAr: "ما هي الإجراءات القانونية لشراء عقار في المغرب؟",
+                        qFr: "Quelles sont les démarches légales pour acheter un bien immobilier au Maroc ?",
+                        qEn: "What are the legal steps to buy real estate in Morocco?",
+                      },
+                    ].map((item, i) => {
+                      const lang = dict.language as string;
+                      const topic = lang === "ar" ? item.topicAr : lang === "fr" ? item.topicFr : item.topicEn;
+                      const q = lang === "ar" ? item.qAr : lang === "fr" ? item.qFr : item.qEn;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => { setInput(q); }}
+                          className="welcome-question-card group"
+                          dir="auto"
+                        >
+                          <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center text-base group-hover:bg-green-100 transition-colors">
+                            {item.icon}
+                          </span>
+                          <div className={`flex-1 min-w-0 ${isRTL ? "text-right" : "text-left"}`}>
+                            <p className="text-xs font-semibold text-green-700 mb-1">{topic}</p>
+                            <p className="text-sm text-slate-700 leading-snug line-clamp-2">{q}</p>
+                          </div>
+                          <svg className={`flex-shrink-0 w-4 h-4 text-slate-300 group-hover:text-green-500 transition-colors ${isRTL ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-center text-xs text-slate-400">
+                    {isRTL
+                      ? "✦ AI-Mizan لا يُعوِّض محامياً مرخصاً · للاستفسارات الجدية استشر خبيراً قانونياً"
+                      : "✦ AI-Mizan does not replace a licensed lawyer · For serious matters consult a legal professional"
+                    }
                   </p>
                 </div>
               </div>
@@ -2006,18 +2083,33 @@ const ChatPage = () => {
                             </span>
                           </div>
                         ) : isAssistant ? (
-                          <div className="space-y-5">
+                          <div className="space-y-3">
                             {assistantSections.length > 0 ? (
                               assistantSections.map((section, sectionIndex) => {
                                 const showHeading = section.hasExplicitHeading || assistantSections.length > 1;
+                                const sectionVariantMap: Record<SectionKey, string> = {
+                                  summary: "chat-section chat-section-summary",
+                                  legalAnalysis: "chat-section chat-section-legal",
+                                  clarifyingQuestions: "chat-section chat-section-clarify",
+                                  additionalDetails: "chat-section chat-section-details",
+                                };
+                                const sectionIconMap: Record<SectionKey, string> = {
+                                  summary: "📋",
+                                  legalAnalysis: "⚖️",
+                                  clarifyingQuestions: "❓",
+                                  additionalDetails: "ℹ️",
+                                };
+                                const variantClass = sectionVariantMap[section.key] || "chat-section chat-section-details";
+                                const sectionIcon = sectionIconMap[section.key] || "•";
                                 return (
-                                  <section key={`${section.key}-${sectionIndex}`} className="space-y-2" dir="auto">
+                                  <section key={`${section.key}-${sectionIndex}`} className={variantClass} dir="auto">
                                     {showHeading && (
-                                      <h3 className="text-base font-semibold text-slate-900">
-                                        {getSectionLabel(section.key, messageLanguage)}
-                                      </h3>
+                                      <div className="chat-section-label">
+                                        <span>{sectionIcon}</span>
+                                        <span>{getSectionLabel(section.key, messageLanguage)}</span>
+                                      </div>
                                     )}
-                                    <div className="space-y-2 text-sm text-slate-700">
+                                    <div className="space-y-1.5 text-sm text-slate-800 leading-relaxed">
                                       {renderMessageContent(section.text, messageIsRTL)}
                                     </div>
                                   </section>
@@ -2025,20 +2117,22 @@ const ChatPage = () => {
                               })
                             ) : (
                               <section className="space-y-2" dir="auto">
-                                <div className="space-y-2 text-sm text-slate-700">
+                                <div className="space-y-2 text-sm text-slate-800 leading-relaxed">
                                   {renderMessageContent(message.content, messageIsRTL)}
                                 </div>
                               </section>
                             )}
                             {uniqueCitations.length > 0 && (
-                              <div className={`border-t border-slate-100 pt-4 ${messageIsRTL ? "text-right" : "text-left"}`} dir={messageIsRTL ? "rtl" : "ltr"}>
-                                <div
-                                  className={`${isRTL ? "text-sm font-semibold text-slate-500 mb-2" : "text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2"}`}
-                                  dir={isRTL ? "rtl" : "ltr"}
-                                >
-                                  {citationsHeading}
+                              <div className={`mt-1 pt-3 border-t border-slate-100 ${messageIsRTL ? "text-right" : "text-left"}`} dir={messageIsRTL ? "rtl" : "ltr"}>
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <svg className="w-3.5 h-3.5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    {citationsHeading}
+                                  </span>
                                 </div>
-                                <div className={`flex flex-wrap gap-2 ${messageIsRTL ? "justify-end" : ""}`}>
+                                <div className={`flex flex-wrap gap-1.5 ${messageIsRTL ? "justify-end" : ""}`}>
                                   {uniqueCitations.map((citation) => {
                                     const normalizedCode = (citation.code || "").toLowerCase().trim();
                                     const normalizedArticle = (citation.articleNumber || "").toString().trim();
@@ -2051,14 +2145,17 @@ const ChatPage = () => {
                                       <div key={`${normalizedCode}|${normalizedArticle}`} className="inline-flex">
                                         <Link
                                           href={`/laws/${normalizedCode}/articles/${normalizedArticle}`}
-                                          className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 border border-green-100 hover:bg-green-100 hover:border-green-300 transition-colors cursor-pointer"
+                                          className="citation-pill"
                                           onMouseEnter={(event) => showCitationTooltip(event.currentTarget, normalizedCode, normalizedArticle, tooltipDirection)}
                                           onMouseLeave={hideCitationTooltip}
                                           onFocus={(event) => showCitationTooltip(event.currentTarget, normalizedCode, normalizedArticle, tooltipDirection)}
                                           onBlur={hideCitationTooltip}
                                         >
-                                          <span className="font-medium">{lawShortName}</span>
-                                          <span className="font-semibold">{`${messageArticleLabel} ${citation.articleNumber}`}</span>
+                                          <svg className="w-3 h-3 flex-shrink-0 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                          </svg>
+                                          <span className="font-medium opacity-80">{lawShortName}</span>
+                                          <span className="font-bold">{messageArticleLabel} {citation.articleNumber}</span>
                                         </Link>
                                       </div>
                                     );
@@ -2101,34 +2198,82 @@ const ChatPage = () => {
           </div>
 
           {/* Input Area - Fixed at Bottom */}
-          <div className="flex-shrink-0 px-6 py-4 border-t border-slate-200 bg-white">
-            <div className="flex items-end gap-3 max-w-4xl mx-auto">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void sendMessage();
-                  }
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-                }}
-                placeholder={dict.chatPlaceholder || "Type your legal question..."}
-                className={`flex-1 min-h-[54px] max-h-[120px] resize-none rounded-lg border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all ${isRTL ? 'text-right' : 'text-left'}`}
-                rows={1}
-                dir={isRTL ? "rtl" : "ltr"}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={loading || isTyping || !input.trim()}
-                className="flex-shrink-0 h-[54px] bg-green-600 text-white rounded-lg px-5 text-sm font-semibold hover:bg-green-700 active:bg-green-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
-              >
-                {loading ? dict.chatSending : dict.chatSend}
-              </button>
+          <div className="flex-shrink-0 border-t border-slate-200 bg-white">
+            {/* Quick-topic chips */}
+            <div className={`px-4 pt-3 pb-1 flex gap-2 overflow-x-auto scrollbar-none ${isRTL ? "flex-row-reverse" : ""}`}>
+              {[
+                { icon: "👨‍👩‍👧", labelAr: "أسرة", labelFr: "Famille", labelEn: "Family", qAr: "حقوقي في قانون الأسرة:", qFr: "Mes droits en droit de la famille : ", qEn: "My rights in family law: " },
+                { icon: "💼", labelAr: "عمل", labelFr: "Travail", labelEn: "Labor", qAr: "حقوقي كعامل في القانون المغربي:", qFr: "Mes droits comme salarié au Maroc : ", qEn: "My labor rights in Morocco: " },
+                { icon: "🏠", labelAr: "سكن", labelFr: "Logement", labelEn: "Housing", qAr: "حقوق المستأجر في القانون المغربي:", qFr: "Droits du locataire au Maroc : ", qEn: "Tenant rights in Morocco: " },
+                { icon: "📜", labelAr: "ميراث", labelFr: "Héritage", labelEn: "Inheritance", qAr: "كيفية توزيع الميراث:", qFr: "Comment se distribue l'héritage : ", qEn: "How inheritance is distributed: " },
+                { icon: "⚖️", labelAr: "جنائي", labelFr: "Pénal", labelEn: "Penal", qAr: "ما هي عقوبة:", qFr: "Quelle est la peine pour : ", qEn: "What is the penalty for: " },
+                { icon: "🤝", labelAr: "عقود", labelFr: "Contrats", labelEn: "Contracts", qAr: "صحة العقد في القانون المغربي:", qFr: "Validité d'un contrat au Maroc : ", qEn: "Contract validity in Morocco: " },
+              ].map((chip) => {
+                const lang = dict.language as string;
+                const label = lang === "ar" ? chip.labelAr : lang === "fr" ? chip.labelFr : chip.labelEn;
+                const q = lang === "ar" ? chip.qAr : lang === "fr" ? chip.qFr : chip.qEn;
+                return (
+                  <button
+                    key={chip.labelEn}
+                    type="button"
+                    onClick={() => setInput((prev) => prev ? prev : q)}
+                    className="prompt-chip flex-shrink-0 shadow-sm"
+                    dir="auto"
+                  >
+                    <span>{chip.icon}</span>
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="px-4 pb-4 pt-2">
+              <div className={`flex items-end gap-2 rounded-xl border-2 border-slate-200 bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all shadow-sm px-4 py-2`}>
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void sendMessage();
+                    }
+                  }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                  }}
+                  placeholder={dict.chatPlaceholder || (isRTL ? "اطرح سؤالك القانوني هنا..." : "Type your legal question here...")}
+                  className={`flex-1 min-h-[40px] max-h-[120px] resize-none bg-transparent text-sm focus:outline-none text-slate-900 placeholder-slate-400 py-1.5 ${isRTL ? 'text-right' : 'text-left'}`}
+                  rows={1}
+                  dir={isRTL ? "rtl" : "ltr"}
+                />
+                <div className={`flex items-center gap-2 flex-shrink-0 pb-0.5 ${isRTL ? "flex-row-reverse" : ""}`}>
+                  {input.length > 0 && (
+                    <span className="text-xs text-slate-400 select-none tabular-nums">{input.length}/2000</span>
+                  )}
+                  <button
+                    onClick={sendMessage}
+                    disabled={loading || isTyping || !input.trim()}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-green-600 text-white hover:bg-green-700 active:bg-green-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm flex-shrink-0"
+                    aria-label={dict.chatSend || "Send"}
+                  >
+                    {loading ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    ) : (
+                      <svg className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <p className={`mt-1.5 text-[10px] text-slate-400 ${isRTL ? "text-right" : "text-left"}`}>
+                {isRTL ? "Enter لإرسال · Shift+Enter لسطر جديد" : "Enter to send · Shift+Enter for new line"}
+              </p>
             </div>
           </div>
         </div>
