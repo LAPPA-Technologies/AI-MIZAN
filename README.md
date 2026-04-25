@@ -1,201 +1,114 @@
-# AI-MIZAN
-The structured Moroccan legal engine
-=======
-# AI-Mizan ⚖️
-**Moroccan Law — AI Legal Assistant with Citations**
+# AI-Mizan
 
-AI-Mizan is a legal-focused assistant designed to answer questions about **Moroccan law** (multiple codes and official sources).  
-It retrieves relevant legal articles, provides **grounded answers with citations**, and supports **Darija, French, and Arabic**.
+Moroccan law assistant built with Next.js, Prisma, and PostgreSQL.
 
-> Goal: Make Moroccan law easier to understand while staying strict, transparent, and source-based.
+## What this app does
 
-## ✨ Features
+- Provides legal-information chat answers grounded in Moroccan law articles.
+- Shows citations and article details.
+- Lets users browse/search law codes and articles.
+- Supports Arabic/French content and translation helpers.
 
-- ✅ **Legal-only responses** (rejects non-legal questions)
-- 📚 **Citations to articles** (answer always references sources)
-- 🔎 **Retrieval-Augmented Generation (RAG)** over official legal text
-- 🌍 **Multilingual**: Darija / Français / العربية
-- 🧩 **PDF → structured articles** (Articles converted to JSON)
-- 🗂️ Article search by keywords + semantic similarity
-- 🧾 Clear “source-first” UI: show article numbers + quoted excerpt (short) + link/page reference (if available)
+## Tech stack
 
----
+- Next.js (App Router) + TypeScript
+- Prisma ORM + PostgreSQL
+- DeepSeek (chat/completions)
+- Optional OpenAI/DeepSeek/local embeddings modes
 
-## 🧱 Tech Stack (this repo)
+## Local development
 
-- **Frontend / App**: Next.js (App Router) + TypeScript
-- **Backend / API**: Next.js server routes (app/api)
-- **Database**: PostgreSQL via Prisma ORM (seed + migrations included)
-- **Embeddings**: local hashing fallback; optional OpenAI or DeepSeek embedding providers
-- **LLM / Completions**: DeepSeek chat completions (wrapper in `lib/deepseek.ts`) with local fallbacks
-- **Search**: in-process vector search over `LawEmbedding` rows + keyword fallback
-- **Styling**: Tailwind CSS (present in devDependencies)
-
-Key files:
-- `app/api/chat/route.ts` — main chat handler (RAG, gating, fallbacks)
-- `lib/embeddings.ts` — local / OpenAI / DeepSeek embedding logic
-- `lib/deepseek.ts` — DeepSeek API wrapper
-- `lib/search.ts` — retrieval and similarity scoring
-- `prisma/seed.ts` — seeds articles and embeddings
-- `data/laws/` — law JSON seed files
-
----
-
-## 📂 Project Structure (actual)
-```bash
-AI-Mizan/
-├─ app/
-│  └─ api/chat/route.ts
-├─ data/
-│  └─ laws/ (seed JSON files)
-├─ lib/
-│  ├─ embeddings.ts
-│  ├─ deepseek.ts
-│  ├─ search.ts
-│  ├─ searchGate.ts
-│  └─ prisma.ts
-├─ prisma/
-│  ├─ schema.prisma
-│  └─ seed.ts
-├─ public/
-├─ styles.css
-├─ package.json
-└─ README.md
-```
-## 🚀 Quickstart (how to run this repository)
-### Prerequisites
-- **Node.js** (version 18 or later): Download and install from [nodejs.org](https://nodejs.org/).
-- **PostgreSQL**: Download from [postgresql.org](https://www.postgresql.org/download/windows/). After installation, start the PostgreSQL service.
-
-### 1) Clone the repository
-
-```bash
-git clone <repo-url>
-cd AI-Mizan
-```
-
-### 2) Create the database
-
-Using pgAdmin or psql, connect to your PostgreSQL server and create a database named `ai_mizan`:
-
-```sql
-CREATE DATABASE ai_mizan;
-```
-
-### 3) Install dependencies (Open a CMD in the AI-MIZAN folder)
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-### 4) Configure environment
-
-Copy `.env.example` to `.env` and edit it:
+2. Copy env template and fill values:
 
 ```bash
 cp .env.example .env
 ```
 
-Update the following variables:
-- `DATABASE_URL`: Set to your PostgreSQL connection string, e.g., `postgresql://postgres:yourpassword@localhost:5432/ai_mizan`.
-- `DEEPSEEK_API_KEY`: Add your DeepSeek API key (optional but recommended for chat completions).
-- `OPENAI_API_KEY`: Add your OpenAI API key (optional, for embeddings).
-
-### 5) Set up the database
+3. Run DB migrations and seed:
 
 ```bash
-npx prisma generate
 npx prisma migrate dev
 npm run db:seed
 ```
 
-### 6) Start the development server
+4. Start app:
 
 ```bash
 npm run dev
 ```
 
-The app will run at `http://localhost:3000`. Open it in your browser.
-The app runs at `http://localhost:3000` by default.
+## Deploy on Vercel with Supabase
 
+### 1) Create a Supabase project
 
-## 🔧 Configuration (env)
+- In Supabase, create a new project.
+- Go to `Project Settings -> Database`.
+- Copy both connection strings:
+  - Pooled connection (port `6543`, pooler) for `DATABASE_URL`
+  - Direct connection (port `5432`) for `DIRECT_URL`
 
-Important environment variables used by this codebase:
+### 2) Configure Prisma environment variables
 
-- `DATABASE_URL` — Postgres connection string (required for Prisma).
-- `DEEPSEEK_API_KEY` — DeepSeek API key (optional, used for chat completions and embeddings).
-- `DEEPSEEK_BASE_URL` — DeepSeek base URL (optional).
-- `DEEPSEEK_MODEL` — DeepSeek model id (optional).
-- `OPENAI_API_KEY` — OpenAI API key (optional, used for embeddings if `EMBEDDINGS_MODE` allows).
-- `EMBEDDINGS_MODE` — `auto|local|openai|deepseek` (default: `auto`).
-- `MIN_RELEVANCE` — float threshold (default `0.78`) to mark citations as grounded.
-- `RETRIEVE_TOP_K` — number of articles to retrieve for context (default `5`).
-- `LOCAL_EMBEDDINGS_DIM` — integer dimension for local hashing embeddings (default 256).
+Set these in Vercel (Project -> Settings -> Environment Variables):
 
-Notes:
-- In `auto` mode the app tries OpenAI → DeepSeek → local embedding providers.
-- The seed script (`prisma/seed.ts`) will create local embeddings if remote keys are missing.
+- `DATABASE_URL` = pooled Supabase URL (with `pgbouncer=true`)
+- `DIRECT_URL` = direct Supabase URL
+- `DEEPSEEK_API_KEY` = your DeepSeek key
+- `DEEPSEEK_MODEL` = `deepseek-chat` (or your selected model)
+- `OPENAI_API_KEY` (optional)
+- `EMBEDDINGS_MODE` = `auto` (or `local|openai|deepseek`)
+- `LOCAL_EMBEDDINGS_DIM` = `256`
 
-## 🧠 How it works (RAG pipeline in this repo)
+### 3) Import project to Vercel
 
-1. Ingestion: law JSON files in `data/laws/` are read by `prisma/seed.ts`.
-2. Seeding: articles are upserted into the `LawArticle` table and embeddings into `LawEmbedding`.
-3. Embeddings: `lib/embeddings.ts` supports local hashing embeddings plus optional OpenAI/DeepSeek providers.
-4. Retrieval: `lib/search.ts` computes cosine similarity against stored embeddings and returns top K results; `keywordFallback` covers missing embeddings.
-5. Routing: `lib/searchGate.ts` decides whether a message should trigger a legal DB search or be treated as small talk.
-6. Answering: `app/api/chat/route.ts` composes the LLM prompt (DeepSeek) using retrieved articles, or falls back to an extractive/local reply when needed.
-7. Grounding: citations are marked `grounded` only when the top similarity score ≥ `MIN_RELEVANCE` or when keyword fallback matched.
+- Push this repository to GitHub/GitLab/Bitbucket.
+- In Vercel, create a new project and import the repository.
+- Framework preset: Next.js.
+- Build command: `npm run build`
+- Install command: `npm install`
 
-## 🛡️ Guardrails (Legal-only)
+Note: `prisma generate` is already executed by `postinstall`.
 
-AI-Mizan must not answer:
+### 4) Run database migrations on Supabase
 
-- general knowledge (e.g., “distance between Mars and Earth”)
-- medical advice, hacking, politics, etc.
+From your local machine (with production env values in `.env`):
 
-Instead it replies with a short refusal and a redirect, for example:
+```bash
+npx prisma migrate deploy
+```
 
-> “I can only answer questions about Moroccan family law. Ask me about marriage, divorce, custody, inheritance…”
+This applies migrations to Supabase using `DIRECT_URL`.
 
-### 📌 Example Query
+### 5) Seed production data (one-time)
 
-User:
+Run once after migrations:
 
-`"شنو الشروط ديال الزواج فمدونة الأسرة؟"`
+```bash
+npm run db:seed
+```
 
-AI-Mizan:
+You can run this locally with production env vars, or from a trusted CI job.
 
-- Provides a structured answer
-- Includes citations (Article X, Article Y)
-- Optionally adds short excerpts (≤ 1–2 sentences)
+### 6) Deploy
 
-## ✅ Roadmap
+- Trigger a Vercel deployment from dashboard or push to main branch.
+- Open the deployed URL and test:
+  - `/api/chat`
+  - `/api/articles`
+  - chat page and laws pages
 
-- Improve PDF parsing robustness (headers, footnotes, OCR fallback)
-- Add bilingual citations display (FR/AR)
-- Add “Article explorer” UI (browse by book/chapter/article)
-- Add evaluation set (50–200 legal Q/A with expected sources)
-- Add rate limiting + abuse protection
-- Add admin tool to upload new legal texts
+## Operational notes
 
-## ⚠️ Disclaimer
+- `app/api/chat/route.ts` is configured for Node.js runtime and extended duration.
+- `vercel.json` sets a `maxDuration` for streaming chat responses.
+- Keep Supabase credentials server-side only; never expose them in client env vars.
 
-AI-Mizan provides informational content based on legal texts and does not replace a lawyer.
-Always verify with official sources or a qualified legal professional for critical decisions.
+## Disclaimer
 
-## 🤝 Contributing
-
-Contributions are welcome:
-
-Fork the repo
-
-Create a feature branch: git checkout -b feature/my-feature
-
-Commit: git commit -m "Add my feature"
-
-Push: git push origin feature/my-feature
-
-Open a Pull Request
-
->>>>>>> 979f61b (Initial commit - AI-Mizan setup)
+This project provides legal information, not legal advice.
