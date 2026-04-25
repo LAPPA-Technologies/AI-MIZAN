@@ -19,4 +19,4 @@ DB_PDF_EXTRACTION_DEBUGING/
 .DS_Store
 Thumbs.db
 *.swp
-*.swo
+*.swo.claude/
