@@ -1,6 +1,22 @@
 node_modules/
 .next/
+*.tsbuildinfo
 .env
 .env.local
 .env*.local
 !.env.example
+
+# PDF source files and extraction outputs (large, not needed in repo)
+data/Moroccan_Laws_PDF/
+data/laws_extracted/
+data/scripts/__pycache__/
+data/__pycache__/
+
+# PDF extraction debugging workspace
+DB_PDF_EXTRACTION_DEBUGING/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
