@@ -5,12 +5,20 @@ import { getDictionary, getLocale } from "../../../lib/i18n";
 import { getLawMetadata } from "../../../lib/lawMetadata";
 import LawsLanguageSelector from "./LawsLanguageSelector";
 
-const LawChaptersPage = async ({ params, searchParams }: { params: { code: string }, searchParams: { lang?: string } }) => {
+const LawChaptersPage = async ({
+  params,
+  searchParams
+}: {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ lang?: string }>;
+}) => {
   const locale = await getLocale();
   const dict = getDictionary(locale);
   const { code } = await params;
   const searchParamsResolved = await searchParams;
-  const selectedLang = searchParamsResolved.lang || locale;
+  // Map 'en' → 'fr' since articles only exist in ar/fr
+  const rawLang = searchParamsResolved.lang || locale;
+  const selectedLang = rawLang === 'en' ? 'fr' : rawLang;
 
   // Get language counts for this code
   const languageCounts = await prisma.lawArticle.groupBy({

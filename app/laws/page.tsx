@@ -6,15 +6,21 @@ import { getDictionary, getLocale } from "../../lib/i18n";
 import { getLawName, getLawShortName, getLawMetadata } from "../../lib/lawMetadata";
 
 const codeIcons: Record<string, string> = {
-  family: "👨‍👩‍👧‍👦",
-  penal: "⚖️",
-  obligations: "📜",
+  family_code: "👨‍👩‍👧‍👦",
+  penal_code: "⚖️",
+  obligations_contracts: "📜",
   civil_procedure: "🏛️",
+  commerce_code: "🏪",
+  criminal_procedure: "🔍",
+  labor_code: "👷",
+  urbanism_code: "🏗️",
 };
 
 const LawsPage = async () => {
   const locale = await getLocale();
   const dict = getDictionary(locale);
+  // Content language: map 'en' → 'fr' since articles only exist in ar/fr
+  const contentLang = locale === 'en' ? 'fr' : locale;
 
   // Get all codes with counts per language
   const codeStats = await prisma.lawArticle.groupBy({
@@ -61,7 +67,7 @@ const LawsPage = async () => {
               className="input-shell flex-1"
               required
             />
-            <input type="hidden" name="lang" value={locale} />
+            <input type="hidden" name="lang" value={contentLang} />
             <button className="btn-primary whitespace-nowrap">{dict.searchAllLaws || "Search All Laws"}</button>
           </form>
         </div>
@@ -77,7 +83,7 @@ const LawsPage = async () => {
             const icon = codeIcons[code] || "📄";
 
             return (
-              <div key={code} className="card space-y-3 hover:border-green-200 hover:shadow-md transition-all">
+              <div key={code} className="card flex flex-col h-full space-y-3 hover:border-green-200 hover:shadow-md transition-all">
                 {/* Top: Icon + Name + Version */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
@@ -122,12 +128,12 @@ const LawsPage = async () => {
                   </span>
                 </div>
 
-                {/* Actions — generic labels, not "Browse Family Code" */}
-                <div className="flex gap-2 pt-1">
-                  <Link href={`/laws/${code}?lang=${locale}`} className="btn-primary text-xs flex-1 text-center py-2">
+                {/* Actions — generic labels, pinned to card bottom for consistent alignment */}
+                <div className="flex gap-2 pt-4 mt-auto">
+                  <Link href={`/laws/${code}?lang=${contentLang}`} className="btn-primary text-xs flex-1 text-center py-2">
                     {dict.lawsCardCta || "View chapters"}
                   </Link>
-                  <Link href={`/laws/${code}/articles?lang=${locale}`} className="btn-outline text-xs flex-1 text-center py-2">
+                  <Link href={`/laws/${code}/articles?lang=${contentLang}`} className="btn-outline text-xs flex-1 text-center py-2">
                     {dict.searchArticles || "Search"}
                   </Link>
                 </div>

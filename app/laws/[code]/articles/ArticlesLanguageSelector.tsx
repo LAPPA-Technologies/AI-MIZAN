@@ -35,12 +35,6 @@ const ArticlesLanguageSelector = ({ code, selectedLang, languageCounts }: Articl
       >
         AR ({getCount('ar')})
       </button>
-      <button
-        onClick={() => filterByLanguage('en')}
-        className={`px-3 py-1 rounded text-sm ${selectedLang === 'en' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'}`}
-      >
-        EN ({getCount('en')})
-      </button>
     </div>
   );
 };

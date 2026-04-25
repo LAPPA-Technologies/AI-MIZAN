@@ -6,8 +6,8 @@ import { getLawMetadata } from "../../../../lib/lawMetadata";
 import ArticlesLanguageSelector from "./ArticlesLanguageSelector";
 
 type Props = {
-  params: { code: string };
-  searchParams: { q?: string; article?: string; chapter?: string; lang?: string };
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ q?: string; article?: string; chapter?: string; lang?: string }>;
 };
 
 const ArticlesPage = async ({ params, searchParams }: Props) => {
@@ -18,7 +18,8 @@ const ArticlesPage = async ({ params, searchParams }: Props) => {
   const query = sp.q?.trim();
   const articleNumber = sp.article?.trim();
   const chapter = sp.chapter?.trim();
-  const selectedLang = sp.lang || locale;
+  const rawLang = sp.lang || locale;
+  const selectedLang = rawLang === 'en' ? 'fr' : rawLang;
 
   const languageCounts = await prisma.lawArticle.groupBy({
     by: ["language"],
@@ -112,7 +113,6 @@ const ArticlesPage = async ({ params, searchParams }: Props) => {
               <select id="lang" name="lang" defaultValue={selectedLang} className="input-shell">
                 <option value="ar">{dict.languageArabic}</option>
                 <option value="fr">{dict.languageFrench}</option>
-                <option value="en">{dict.languageEnglish}</option>
               </select>
             </div>
           </div>

@@ -8,7 +8,6 @@ type ArticleLanguageSelectorProps = {
   currentLang: string;
   languageFrench: string;
   languageArabic: string;
-  languageEnglish: string;
 };
 
 const ArticleLanguageSelector = ({
@@ -17,7 +16,6 @@ const ArticleLanguageSelector = ({
   currentLang,
   languageFrench,
   languageArabic,
-  languageEnglish
 }: ArticleLanguageSelectorProps) => {
   const router = useRouter();
 
@@ -28,16 +26,15 @@ const ArticleLanguageSelector = ({
   const langs = [
     { code: 'ar', label: languageArabic },
     { code: 'fr', label: languageFrench },
-    { code: 'en', label: languageEnglish },
   ];
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       {langs.map(l => (
         <button
           key={l.code}
           onClick={() => updateLanguage(l.code)}
-          className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+          className={`rounded-full border px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm transition-colors whitespace-nowrap ${
             currentLang === l.code
               ? 'bg-green-100 border-green-300 text-green-800 font-medium'
               : 'border-slate-200 text-slate-600 hover:bg-slate-50'

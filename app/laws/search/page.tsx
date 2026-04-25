@@ -4,12 +4,17 @@ import Footer from "../../../components/Footer";
 import { prisma } from "../../../lib/prisma";
 import { getDictionary, getLocale } from "../../../lib/i18n";
 import { getLawMetadata, getLawShortName, getLawName } from "../../../lib/lawMetadata";
+import { expandQueryForLanguage, isEnglishQuery } from "../../../lib/crossLangSearch";
 
 const codeIcons: Record<string, string> = {
-  family: "👨‍👩‍👧‍👦",
-  penal: "⚖️",
-  obligations: "📜",
+  family_code: "👨‍👩‍👧‍👦",
+  penal_code: "⚖️",
+  obligations_contracts: "📜",
   civil_procedure: "🏛️",
+  commerce_code: "🏪",
+  criminal_procedure: "🔍",
+  labor_code: "👷",
+  urbanism_code: "🏗️",
 };
 
 /** Numeric sort key for article numbers ("1" → 1, "1-1" → 1, "12 bis" → 12) */
@@ -25,7 +30,7 @@ function stripDiacritics(text: string): string {
 }
 
 type Props = {
-  searchParams: { q?: string; lang?: string; article?: string };
+  searchParams: Promise<{ q?: string; lang?: string; article?: string }>;
 };
 
 const SearchPage = async ({ searchParams }: Props) => {
@@ -36,20 +41,41 @@ const SearchPage = async ({ searchParams }: Props) => {
   const rawQuery = sp.q || "";
   const query = decodeURIComponent(rawQuery).trim();
   const articleNumber = sp.article?.trim() || "";
-  const selectedLang = sp.lang || locale;
+  const selectedLang = (() => {
+    const raw = sp.lang || locale;
+    return raw === 'en' ? 'fr' : raw;
+  })();
 
-  // Search across ALL codes  
-  const whereClause: Record<string, unknown> = {
-    language: selectedLang,
+  // Search across ALL codes — with cross-language expansion for English queries
+  const buildWhereClause = () => {
+    const base: Record<string, unknown> = { language: selectedLang };
+    if (articleNumber) base.articleNumber = articleNumber;
+
+    if (query) {
+      const searchTerm = stripDiacritics(query);
+
+      // If user typed English but is searching AR/FR articles, expand keywords
+      if (isEnglishQuery(query) && (selectedLang === "ar" || selectedLang === "fr")) {
+        const expanded = expandQueryForLanguage(query, selectedLang as "ar" | "fr");
+        if (expanded.length > 0) {
+          // Search with both the original term AND every expanded term (OR)
+          const textConditions = [
+            { text: { contains: searchTerm, mode: "insensitive" } },
+            ...expanded.map((term) => ({
+              text: { contains: stripDiacritics(term), mode: "insensitive" },
+            })),
+          ];
+          return { ...base, OR: textConditions };
+        }
+      }
+
+      // Default: plain text search
+      base.text = { contains: searchTerm, mode: "insensitive" };
+    }
+    return base;
   };
-  if (query) {
-    // Use stripped version for Arabic diacritic-insensitive matching
-    const searchTerm = stripDiacritics(query);
-    whereClause.text = { contains: searchTerm, mode: "insensitive" };
-  }
-  if (articleNumber) {
-    whereClause.articleNumber = articleNumber;
-  }
+
+  const whereClause = buildWhereClause();
 
   const rawArticles = query || articleNumber
     ? await prisma.lawArticle.findMany({
@@ -137,7 +163,6 @@ const SearchPage = async ({ searchParams }: Props) => {
                 <select id="lang" name="lang" defaultValue={selectedLang} className="input-shell">
                   <option value="ar">{dict.languageArabic || "Arabic"}</option>
                   <option value="fr">{dict.languageFrench || "French"}</option>
-                  <option value="en">{dict.languageEnglish || "English"}</option>
                 </select>
               </div>
             </div>
