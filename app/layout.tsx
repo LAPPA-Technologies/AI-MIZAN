@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import Header from "../components/Header";
 import { getDictionary, getLocale, getLocaleMeta } from "../lib/i18n";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "AI-Mizan | Moroccan Law Engine",
@@ -38,6 +39,7 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
         <main className="flex-1 overflow-auto">
           {children}
         </main>
+        <Analytics />
       </body>
     </html>
   );

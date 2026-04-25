@@ -19,8 +19,8 @@ const GuidesPage = async () => {
         dict.guideWorkStep3 || "File complaint with Labour Inspector within 90 days",
         dict.guideWorkStep4 || "If unresolved, file case at Labour Court",
       ],
-      laws: ["obligations"],
-      cta: { href: "/laws/obligations/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["obligations_contracts"],
+      cta: { href: "/laws/obligations_contracts/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "🏠",
@@ -47,8 +47,8 @@ const GuidesPage = async () => {
         dict.guideFamilyStep3 || "Custody goes to mother, then father (Art. 171)",
         dict.guideFamilyStep4 || "Alimony calculated based on both parties' means (Art. 84-85)",
       ],
-      laws: ["family"],
-      cta: { href: "/laws/family/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["family_code"],
+      cta: { href: "/laws/family_code/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "⚖️",
@@ -61,8 +61,8 @@ const GuidesPage = async () => {
         dict.guidePenalStep3 || "Arraignment before competent court",
         dict.guidePenalStep4 || "Right to appeal within 10 days of verdict",
       ],
-      laws: ["penal"],
-      cta: { href: "/laws/penal/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["penal_code"],
+      cta: { href: "/laws/penal_code/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "📜",
@@ -75,8 +75,8 @@ const GuidesPage = async () => {
         dict.guideContractStep3 || "Breach entitles injured party to damages (Art. 263 DOC)",
         dict.guideContractStep4 || "Limitation period: 15 years for civil obligations (Art. 387 DOC)",
       ],
-      laws: ["obligations"],
-      cta: { href: "/laws/obligations/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["obligations_contracts"],
+      cta: { href: "/laws/obligations_contracts/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "🏛️",

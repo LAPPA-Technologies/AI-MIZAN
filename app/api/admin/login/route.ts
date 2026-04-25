@@ -42,8 +42,14 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  // Generate an opaque session token (don't store the raw secret in cookie)
-  const sessionToken = crypto.randomBytes(32).toString("hex");
+  // Generate a deterministic HMAC-signed session token.
+  // This avoids in-memory session stores that break on Vercel serverless
+  // (each invocation may be a fresh process with no shared memory).
+  // Security: only someone who knows ADMIN_SECRET can produce a valid token.
+  const sessionToken = crypto
+    .createHmac("sha256", adminSecret)
+    .update("ai-mizan-admin-session-v1")
+    .digest("hex");
 
   const response = NextResponse.json({ success: true });
 
@@ -65,11 +71,6 @@ export const POST = async (request: Request) => {
     maxAge: 86400,
     path: "/",
   });
-
-  // Store session token → admin mapping (in-memory for now)
-  // For production, use Redis or DB session store
-  globalThis.__adminSessions = globalThis.__adminSessions || new Set();
-  (globalThis.__adminSessions as Set<string>).add(sessionToken);
 
   return response;
 };
