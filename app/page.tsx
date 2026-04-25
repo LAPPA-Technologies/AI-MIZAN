@@ -106,6 +106,27 @@ const HomePage = async () => {
 
       <DisclaimerBanner text={dict.disclaimer} />
 
+      {/* AI Chat CTA */}
+      <section className="rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 text-white px-6 py-8 flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex-1 space-y-2">
+          <h2 className="text-xl sm:text-2xl font-bold">
+            {dict.chatCtaTitle || (locale === "ar" ? "اطرح سؤالك القانوني مباشرةً" : locale === "fr" ? "Posez votre question juridique directement" : "Ask your legal question directly")}
+          </h2>
+          <p className="text-green-100 text-sm">
+            {dict.chatCtaSubtitle || (locale === "ar" ? "AI-Mizan يجيب استناداً إلى القانون المغربي الرسمي مع الإشارة إلى المواد القانونية." : locale === "fr" ? "AI-Mizan répond en citant les articles officiels du droit marocain." : "AI-Mizan answers by citing official Moroccan law articles.")}
+          </p>
+        </div>
+        <Link
+          href="/chat"
+          className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-white text-green-800 font-bold px-6 py-3 text-sm hover:bg-green-50 shadow-md transition-all whitespace-nowrap"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          {dict.navAsk || (locale === "ar" ? "ابدأ المحادثة" : locale === "fr" ? "Démarrer le chat" : "Start Chat")}
+        </Link>
+      </section>
+
       {/* Quick topics → linked to specific guides */}
       <section className="space-y-6">
         <h2 className="section-title">{dict.quickTitle}</h2>
@@ -123,6 +144,58 @@ const HomePage = async () => {
             >
               <span className="text-lg">{item.icon}</span>
               <span>{item.text}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Moroccan-specific tools section */}
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="section-title">
+            {locale === "ar" ? "أدوات قانونية مفيدة" : locale === "fr" ? "Outils juridiques utiles" : "Useful Legal Tools"}
+          </h2>
+          <Link href="/simulators" className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors">
+            {locale === "ar" ? "جميع الأدوات" : locale === "fr" ? "Tous les outils" : "All tools"} →
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              icon: "📊",
+              title: locale === "ar" ? "حاسبة الفرائض (الإرث)" : locale === "fr" ? "Calculateur de succession" : "Inheritance Calculator",
+              desc: locale === "ar" ? "توزيع التركة بين الورثة وفق المدونة المغربية" : locale === "fr" ? "Répartition de succession selon la Moudawana" : "Distribute estate per Moroccan Moudawana",
+              href: "/simulators",
+              badge: locale === "ar" ? "جديد" : locale === "fr" ? "Nouveau" : "New",
+            },
+            {
+              icon: "💰",
+              title: locale === "ar" ? "حاسبة الراتب الصافي" : locale === "fr" ? "Calculateur de salaire net" : "Net Salary Calculator",
+              desc: locale === "ar" ? "احسب CNSS وAMO والضريبة على الدخل" : locale === "fr" ? "Calculer CNSS, AMO et IR" : "Calculate CNSS, AMO, and income tax",
+              href: "/simulators",
+            },
+            {
+              icon: "📋",
+              title: locale === "ar" ? "تعويض الفصل التعسفي" : locale === "fr" ? "Indemnité de licenciement" : "Severance Pay",
+              desc: locale === "ar" ? "احسب تعويضك حسب مدة الخدمة" : locale === "fr" ? "Calculer selon l'ancienneté" : "Calculate based on years of service",
+              href: "/simulators",
+            },
+          ].map((tool) => (
+            <Link
+              key={tool.title}
+              href={tool.href}
+              className="card group hover:border-green-200 hover:shadow-md transition-all flex items-start gap-3"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-xl shrink-0">{tool.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h3 className="text-sm font-bold text-slate-900 group-hover:text-green-700 transition-colors">{tool.title}</h3>
+                  {tool.badge && (
+                    <span className="text-[10px] bg-green-100 text-green-700 border border-green-200 rounded-full px-2 py-0.5 font-bold">{tool.badge}</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500">{tool.desc}</p>
+              </div>
             </Link>
           ))}
         </div>

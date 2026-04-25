@@ -5,15 +5,10 @@
 const ADMIN_COOKIE_NAME = "admin_token";
 const ADMIN_FLAG_COOKIE = "admin_logged_in";
 
-// Declare global session store type
-declare global {
-  // eslint-disable-next-line no-var
-  var __adminSessions: Set<string> | undefined;
-}
-
 /**
  * Server-side: Check if the current request has valid admin session.
- * Reads opaque session token from httpOnly cookie.
+ * Verifies the HMAC-signed token from the httpOnly cookie.
+ * This approach is safe on Vercel serverless (no in-memory state required).
  */
 export async function isAdminAuthenticated(): Promise<boolean> {
   const adminSecret = process.env.ADMIN_SECRET;
@@ -25,22 +20,15 @@ export async function isAdminAuthenticated(): Promise<boolean> {
     const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
     if (!token) return false;
 
-    // Check against session store
-    const sessions = globalThis.__adminSessions;
-    if (sessions?.has(token)) return true;
-
-    // Fallback: also accept the raw secret for backward compat during transition
-    // This allows existing logged-in users to remain authenticated
+    // Verify the HMAC-derived session token (constant-time comparison)
     const crypto = await import("crypto");
-    if (token.length === adminSecret.length) {
-      const equal = crypto.timingSafeEqual(
-        Buffer.from(token),
-        Buffer.from(adminSecret)
-      );
-      if (equal) return true;
-    }
+    const expected = crypto
+      .createHmac("sha256", adminSecret)
+      .update("ai-mizan-admin-session-v1")
+      .digest("hex");
 
-    return false;
+    if (token.length !== expected.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
   } catch {
     return false;
   }

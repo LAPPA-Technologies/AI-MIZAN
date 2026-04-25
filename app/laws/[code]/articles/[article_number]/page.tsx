@@ -3,6 +3,7 @@ import { prisma } from "../../../../../lib/prisma";
 import { getDictionary, getLocale } from "../../../../../lib/i18n";
 import { getLawShortName } from "../../../../../lib/lawMetadata";
 import ArticleLanguageSelector from "./ArticleLanguageSelector";
+import TranslateButton from "../../../../../components/TranslateButton";
 
 /** Parse article number for numeric sorting (handles "1", "1-1", "1 bis", etc.) */
 function articleSortKey(num: string): number {
@@ -11,8 +12,8 @@ function articleSortKey(num: string): number {
 }
 
 type Props = {
-  params: { code: string; article_number: string };
-  searchParams: { lang?: string };
+  params: Promise<{ code: string; article_number: string }>;
+  searchParams: Promise<{ lang?: string }>;
 };
 
 const ArticleDetailPage = async ({ params, searchParams }: Props) => {
@@ -20,7 +21,8 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
   const dict = getDictionary(locale);
   const { code, article_number } = await params;
   const searchParamsResolved = await searchParams;
-  const lang = searchParamsResolved.lang || locale;
+  const rawLang = searchParamsResolved.lang || locale;
+  const lang = rawLang === 'en' ? 'fr' : rawLang;
   const isRTL = lang === "ar";
 
   // Fetch all language versions of this article
@@ -74,7 +76,7 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
   const lawName = getLawShortName(code, locale);
 
   return (
-    <div className="section space-y-6">
+    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8 md:py-10 space-y-8">
       {/* ── Breadcrumb ── */}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
         <Link href="/laws" className="hover:text-green-700 transition-colors">
@@ -105,74 +107,92 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
           currentLang={lang}
           languageFrench={dict.languageFrench}
           languageArabic={dict.languageArabic}
-          languageEnglish={dict.languageEnglish}
         />
       </div>
 
       {/* ── Main content grid ── */}
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-6">
+      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-8 min-w-0">
           {/* Official text */}
           <div
-            className="surface"
+            className="surface p-5 sm:p-8"
             dir={isRTL ? "rtl" : "ltr"}
           >
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <h2 className="text-xs font-bold uppercase tracking-[0.25em] text-green-700 border-b border-slate-200 pb-3 mb-4">
               {dict.articleOfficial}
             </h2>
             {activeArticle ? (
               <>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="text-sm text-slate-400 italic mb-4">
                   {activeArticle.source}
                 </p>
 
-                {/* Hierarchy tags */}
-                <div className="mt-3 flex flex-wrap gap-2">
+                {/* Hierarchy tags — wrap naturally, no truncation */}
+                <div className="flex flex-wrap gap-2 mb-5">
                   {activeArticle.book && (
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    <span className="inline-flex items-center rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 leading-snug">
                       {activeArticle.book}
                     </span>
                   )}
+                  {activeArticle.part && (
+                    <span className="inline-flex items-center rounded-md bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 leading-snug">
+                      {activeArticle.part}
+                    </span>
+                  )}
                   {activeArticle.title && (
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    <span className="inline-flex items-center rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 leading-snug">
                       {activeArticle.title}
                     </span>
                   )}
                   {activeArticle.chapter && (
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                    <span className="inline-flex items-center rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-800 leading-snug">
                       {activeArticle.chapter}
                     </span>
                   )}
                   {activeArticle.section && (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                    <span className="inline-flex items-center rounded-md bg-green-50 px-3 py-1.5 text-xs font-medium text-green-800 leading-snug">
                       {activeArticle.section}
                     </span>
                   )}
                 </div>
 
-                <p className="mt-4 whitespace-pre-line text-lg leading-relaxed">
-                  {activeArticle.text}
-                </p>
+                <div className="border-t border-slate-100 pt-5">
+                  <p className="whitespace-pre-line text-base sm:text-lg leading-[1.9] text-slate-800">
+                    {activeArticle.text}
+                  </p>
+                </div>
+
+                {/* Translate to English button — only visible when UI language is English */}
+                {locale === "en" && (
+                  <TranslateButton
+                    articleText={activeArticle.text}
+                    sourceLang={lang}
+                    translateLabel={dict.translateToEnglish}
+                    translatingLabel={dict.translating}
+                    disclaimerText={dict.translationDisclaimer}
+                    hideLabel={dict.hideTranslation}
+                  />
+                )}
               </>
             ) : (
               <p className="mt-4 text-sm text-slate-500">{dict.citationsEmpty}</p>
             )}
           </div>
 
-          {/* Simplified explanation — only shown if real content exists */}
+          {/* Simplified explanation */}
           {activeArticle?.text && (
-            <div className="surface border-l-4 border-green-200 bg-green-50/40">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <div className="surface border-l-4 border-green-200 bg-green-50/30 p-5 sm:p-6">
+              <h2 className="text-xs font-bold uppercase tracking-[0.25em] text-green-700 mb-3">
                 {dict.articleSimplified}
               </h2>
-              <p className="mt-3 text-sm text-slate-600 italic">
+              <p className="text-sm text-slate-600 italic leading-relaxed">
                 {dict.articleSimplifiedBody}
               </p>
             </div>
           )}
 
           {/* ── Prev / Next navigation ── */}
-          <div className="flex items-center justify-between gap-4 pt-2">
+          <div className="flex items-center justify-between gap-4 pt-2 border-t border-slate-100">
             {prevArticle ? (
               <Link
                 href={`/laws/${code}/articles/${prevArticle}?lang=${lang}`}
@@ -203,13 +223,13 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
         </div>
 
         {/* ── Sidebar ── */}
-        <aside className="space-y-6">
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           {/* Related articles */}
-          <div className="surface">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+          <div className="surface p-5">
+            <h2 className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500 mb-4">
               {dict.articleRelated}
             </h2>
-            <div className="mt-4 space-y-2">
+            <div className="space-y-2">
               {related.length === 0 ? (
                 <p className="text-sm text-slate-500">{dict.citationsEmpty}</p>
               ) : (
@@ -217,11 +237,11 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
                   <Link
                     key={item.id}
                     href={`/laws/${code}/articles/${item.articleNumber}?lang=${lang}`}
-                    className="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 hover:border-green-200 hover:bg-green-50/50 transition-colors"
+                    className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-green-200 hover:bg-green-50/50 transition-colors"
                   >
-                    {dict.articleLabel} {item.articleNumber}
+                    <span className="block">{dict.articleLabel} {item.articleNumber}</span>
                     {item.chapter && (
-                      <span className="ms-2 text-xs text-slate-400">{item.chapter}</span>
+                      <span className="block mt-0.5 text-xs text-slate-500 leading-snug line-clamp-2">{item.chapter}</span>
                     )}
                   </Link>
                 ))
@@ -230,7 +250,7 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
           </div>
 
           {/* Ask about this article */}
-          <Link href="/chat" className="btn-primary w-full text-center block">
+          <Link href="/chat" className="btn-primary w-full text-center block py-3">
             {dict.askAbout}
           </Link>
         </aside>

@@ -136,11 +136,7 @@ export const createEmbedding = async (text: string) => {
     return createDeepSeekEmbedding(text);
   }
 
-  // auto mode: try openai, then deepseek, then local
-  const openAiEmbedding = await createOpenAiEmbedding(text);
-  if (openAiEmbedding.length) {
-    return openAiEmbedding;
-  }
+  // auto mode: try deepseek, fall back to local hash embeddings
   const deepSeekEmbedding = await createDeepSeekEmbedding(text);
   if (deepSeekEmbedding.length) {
     return deepSeekEmbedding;

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
-const FALLBACK_LANG_ORDER = ["fr", "ar", "en"] as const;
+const FALLBACK_LANG_ORDER = ["fr", "ar"] as const;
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
