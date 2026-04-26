@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
@@ -23,6 +23,8 @@ export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalcul
   const [result, setResult] = useState<ReturnType<typeof calcRent> | null>(
     initialRent && initialRent > 0 ? calcRent(initialRent) : null
   );
+  const [error, setError] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (rent) {
@@ -30,10 +32,25 @@ export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalcul
     }
   }, [rent]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const val = parseFloat(rent);
+      if (!isNaN(val) && val > 0) {
+        setError("");
+        setResult(calcRent(val));
+      }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [rent]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!rent) { setError(dict.simErrorRequired || "Please enter a value"); return; }
     const val = parseFloat(rent);
-    if (!isNaN(val) && val > 0) setResult(calcRent(val));
+    if (isNaN(val) || val <= 0) { setError(dict.simErrorPositive || "Please enter a positive number"); return; }
+    setError("");
+    setResult(calcRent(val));
   };
 
   return (
@@ -44,13 +61,13 @@ export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalcul
             {dict.simRentMonthly}
           </label>
           <input
-            id="rent-monthly" type="number" min="0" step="100"
+            id="rent-monthly" type="number" min="0"
             value={rent}
-            onChange={(e) => { setRent(e.target.value); setResult(null); }}
+            onChange={(e) => { setRent(e.target.value); setResult(null); setError(""); }}
             placeholder="5000"
             className="input-shell w-full"
-            required
           />
+          {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
         </div>
         <button type="submit" className="btn-primary self-end px-6 py-2">
           {dict.simSalaryCalculate}
@@ -63,7 +80,7 @@ export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalcul
           lang={lang}
           dict={dict}
           shareParams={rent ? { loyer: rent } : undefined}
-          onReset={() => { setRent(""); setResult(null); }}
+          onReset={() => { setRent(""); setResult(null); setError(""); }}
         >
           <div className="space-y-2">
             <Row label={dict.simRentDeposit} value={`${fmt(result.maxDeposit)} MAD`} color="green" bold large />

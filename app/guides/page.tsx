@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDictionary, getLocale } from "../../lib/i18n";
+import { makeArticleLinksClickable } from "../../lib/articleLinks";
 import Container from "../../components/Container";
 import Footer from "../../components/Footer";
 
@@ -13,20 +14,22 @@ const GuidesPage = async () => {
       title: dict.guidesCard1Title,
       body: dict.guidesCard1Body,
       color: "blue",
+      codeKey: "labor_code",
       steps: [
         dict.guideWorkStep1 || "Check if dismissal is justified under Labour Code Art. 39",
         dict.guideWorkStep2 || "Gather employment contract and pay slips",
         dict.guideWorkStep3 || "File complaint with Labour Inspector within 90 days",
         dict.guideWorkStep4 || "If unresolved, file case at Labour Court",
       ],
-      laws: ["obligations_contracts"],
-      cta: { href: "/laws/obligations_contracts/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["labor_code"],
+      cta: { href: "/laws/labor_code/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "🏠",
       title: dict.guidesCard2Title,
       body: dict.guidesCard2Body,
       color: "amber",
+      codeKey: "civil_procedure",
       steps: [
         dict.guideRentStep1 || "Review your lease contract terms and duration",
         dict.guideRentStep2 || "Deposit cannot exceed 2 months' rent (Law 67-12)",
@@ -41,6 +44,7 @@ const GuidesPage = async () => {
       title: dict.guidesCard3Title,
       body: dict.guidesCard3Body,
       color: "green",
+      codeKey: "family_code",
       steps: [
         dict.guideFamilyStep1 || "Marriage requires minimum age of 18 (Art. 19)",
         dict.guideFamilyStep2 || "Divorce can be initiated by either spouse (Art. 78-93)",
@@ -55,20 +59,22 @@ const GuidesPage = async () => {
       title: dict.guidePenalTitle || "Criminal Procedures",
       body: dict.guidePenalBody || "Understanding criminal law, penalties, and legal proceedings in Morocco.",
       color: "red",
+      codeKey: "criminal_procedure",
       steps: [
         dict.guidePenalStep1 || "File complaint at police station or prosecutor's office",
         dict.guidePenalStep2 || "Criminal investigation conducted by judicial police",
         dict.guidePenalStep3 || "Arraignment before competent court",
         dict.guidePenalStep4 || "Right to appeal within 10 days of verdict",
       ],
-      laws: ["penal_code"],
-      cta: { href: "/laws/penal_code/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["criminal_procedure"],
+      cta: { href: "/laws/criminal_procedure/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "📜",
       title: dict.guideContractTitle || "Contracts and Obligations",
       body: dict.guideContractBody || "Learn about contract formation, validity, and enforcement under Moroccan law.",
       color: "purple",
+      codeKey: "obligations_contracts",
       steps: [
         dict.guideContractStep1 || "Agreement requires offer, acceptance, and lawful cause (Art. 2 DOC)",
         dict.guideContractStep2 || "Contracts can be verbal or written (Art. 443 DOC)",
@@ -83,6 +89,7 @@ const GuidesPage = async () => {
       title: dict.guideCourtTitle || "Court System",
       body: dict.guideCourtBody || "How to navigate the Moroccan court system and file legal procedures.",
       color: "slate",
+      codeKey: "civil_procedure",
       steps: [
         dict.guideCourtStep1 || "First Instance Courts handle most civil and criminal matters",
         dict.guideCourtStep2 || "Court of Appeal for second-degree review",
@@ -143,7 +150,11 @@ const GuidesPage = async () => {
                     <span className={`flex h-5 w-5 items-center justify-center rounded-full ${c.step} text-white text-[10px] font-bold shrink-0 mt-0.5`}>
                       {i + 1}
                     </span>
-                    <p className="text-sm text-slate-700 leading-snug">{step}</p>
+                    {/* Text from own i18n files — dangerouslySetInnerHTML is safe here */}
+                    <p
+                      className="text-sm text-slate-700 leading-snug"
+                      dangerouslySetInnerHTML={{ __html: makeArticleLinksClickable(step, guide.codeKey, locale) }}
+                    />
                   </div>
                 ))}
               </div>

@@ -69,7 +69,7 @@ const Footer = ({ labels }: FooterProps) => {
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-2 py-4 text-xs text-slate-500">
           <span>© {year} AI-Mizan. {labels.footerDisclaimer}</span>
           <span className="flex items-center gap-1">
-            <span>🇲🇦</span>
+            <img src="https://flagcdn.com/ma.svg" alt="Morocco" width="20" height="15" className="rounded-sm" />
             {labels.footerMadeIn || "Made in Morocco"}
           </span>
         </div>

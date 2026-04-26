@@ -21,11 +21,11 @@ const Header = ({ labels }: HeaderProps) => {
   }, []);
 
   const navItems = [
+    { href: "/simulateurs", label: labels.navSimulators || "Simulators" },
     { href: "/laws", label: labels.navLaws },
     { href: "/guides", label: labels.navGuides },
     { href: "/services", label: labels.navServices || "Services" },
     { href: "/updates", label: labels.navUpdates },
-    { href: "/simulateurs", label: labels.navSimulators || "Simulators" },
     { href: "/about", label: labels.navAbout },
   ];
 

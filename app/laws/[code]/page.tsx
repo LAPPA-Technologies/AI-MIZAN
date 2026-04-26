@@ -68,7 +68,7 @@ const LawChaptersPage = async ({
 
   // Group preliminary articles by chapter
   const preliminaryChapters = preliminaryArticles.reduce((acc, article) => {
-    const chapter = article.chapter || 'No Chapter';
+    const chapter = article.chapter || dict.generalProvisions;
     if (!acc[chapter]) acc[chapter] = [];
     acc[chapter].push(article.articleNumber);
     return acc;

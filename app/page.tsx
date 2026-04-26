@@ -34,7 +34,7 @@ const HomePage = async () => {
         <div className="relative space-y-6 lg:grid lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-8">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur-sm border border-white/20">
-              <span>🇲🇦</span>
+              <img src="https://flagcdn.com/ma.svg" alt="Morocco" width="20" height="15" className="rounded-sm inline-block" />
               <span>{dict.headerTagline || "Moroccan Law Engine"}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
@@ -84,7 +84,9 @@ const HomePage = async () => {
               </div>
             </div>
             <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5 text-center space-y-2">
-              <div className="text-3xl">🇲🇦</div>
+              <div className="flex justify-center">
+                <img src="https://flagcdn.com/ma.svg" alt="Morocco" width="40" height="30" className="rounded-sm" />
+              </div>
               <p className="text-sm font-semibold text-white">
                 {locale === "ar" ? "مجاني للمواطنين دائماً" : locale === "fr" ? "Gratuit pour toujours" : "Always free for citizens"}
               </p>
@@ -113,7 +115,7 @@ const HomePage = async () => {
           </span>
         </div>
         <div className="flex items-center gap-2 text-slate-700">
-          <span className="text-xl">🇲🇦</span>
+          <img src="https://flagcdn.com/ma.svg" alt="Morocco" width="20" height="15" className="rounded-sm inline-block" />
           <span className="text-sm font-semibold">
             {locale === "ar" ? "مجاني للمواطنين دائماً" : locale === "fr" ? "Gratuit pour toujours" : "Always free for citizens"}
           </span>
