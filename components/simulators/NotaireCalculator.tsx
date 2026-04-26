@@ -7,6 +7,7 @@ import { fmt, rnd } from "../../lib/simulatorHelpers";
 import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
 import ArticleModal from "../laws/ArticleModal";
 import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
+import ShareButtons from "./ShareButtons";
 
 function calcNotary(price: number) {
   const registration = price * 0.04;
@@ -102,6 +103,12 @@ export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireC
               </div>
               <p className="text-xs text-slate-400 pt-1">{dict.simNotaryLegalRef}</p>
             </div>
+            <ShareButtons
+              title={dict.simNotaryTitle}
+              slug="notaire"
+              shareParams={price ? { prix: price } : undefined}
+              dict={dict}
+            />
             <button
               type="button"
               onClick={() => { setPrice(""); setResult(null); setError(""); }}

@@ -4,13 +4,14 @@ export type ArticleRef = {
   descAr: string;
   descFr: string;
   descEn: string;
+  inDb?: boolean; // false = display as non-clickable external law reference
 };
 
 export const CALCULATOR_ARTICLES: Record<string, ArticleRef[]> = {
   loyer: [
-    { code: "obligations_contracts", articleNumber: "627", descAr: "عقد الكراء", descFr: "Contrat de bail", descEn: "Lease contract" },
-    { code: "obligations_contracts", articleNumber: "636", descAr: "الضمان الكرائي", descFr: "Garantie locative", descEn: "Rental guarantee" },
-    { code: "obligations_contracts", articleNumber: "690", descAr: "إنهاء عقد الكراء", descFr: "Résiliation du bail", descEn: "Lease termination" },
+    // القانون 67.12 governs residential tenancy in Morocco — not yet in DB
+    { code: "law_67_12", articleNumber: "6", descAr: "القانون 67.12 — الضمان الكرائي: لا يتجاوز شهرين", descFr: "Loi 67-12 — Dépôt de garantie: max 2 mois de loyer", descEn: "Law 67-12 — Security deposit: max 2 months' rent", inDb: false },
+    { code: "law_67_12", articleNumber: "19", descAr: "القانون 67.12 — مدة الإخلاء وإشعار المغادرة", descFr: "Loi 67-12 — Délai d'expulsion et préavis de départ", descEn: "Law 67-12 — Eviction timeline and departure notice", inDb: false },
   ],
   salaire: [
     { code: "labor_code", articleNumber: "345", descAr: "اشتراكات CNSS", descFr: "Cotisations CNSS", descEn: "CNSS contributions" },

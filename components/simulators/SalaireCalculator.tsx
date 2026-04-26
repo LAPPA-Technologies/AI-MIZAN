@@ -7,6 +7,7 @@ import { fmt, rnd } from "../../lib/simulatorHelpers";
 import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
 import ArticleModal from "../laws/ArticleModal";
 import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
+import ShareButtons from "./ShareButtons";
 
 const IR_BRACKETS = [
   { min: 0, max: 30000, rate: 0, deduction: 0 },
@@ -127,6 +128,12 @@ export default function SalaireCalculator({ dict, lang, initialGross }: SalaireC
               </div>
               <p className="text-xs text-slate-400 pt-1">{dict.simSalaryLegalRef}</p>
             </div>
+            <ShareButtons
+              title={dict.simSalaryTitle}
+              slug="salaire"
+              shareParams={gross ? { brut: gross } : undefined}
+              dict={dict}
+            />
             <button
               type="button"
               onClick={() => { setGross(""); setResult(null); setError(""); }}

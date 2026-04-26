@@ -7,6 +7,7 @@ import { fmt } from "../../lib/simulatorHelpers";
 import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
 import ArticleModal from "../laws/ArticleModal";
 import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
+import ShareButtons from "./ShareButtons";
 
 function calcRent(monthlyRent: number) {
   return { maxDeposit: monthlyRent * 2, noticePeriod: monthlyRent > 4000 ? 3 : 2 };
@@ -89,6 +90,12 @@ export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalcul
               <Row label={dict.simRentNotice} value={`${result.noticePeriod} ${dict.simRentMonths}`} color="amber" />
               <p className="text-xs text-slate-400 pt-1">{dict.simRentLegalRef}</p>
             </div>
+            <ShareButtons
+              title={dict.simRentTitle}
+              slug="loyer"
+              shareParams={rent ? { loyer: rent } : undefined}
+              dict={dict}
+            />
             {/* Reset */}
             <button
               type="button"

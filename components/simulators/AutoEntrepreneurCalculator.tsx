@@ -7,6 +7,7 @@ import { fmt, rnd } from "../../lib/simulatorHelpers";
 import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
 import ArticleModal from "../laws/ArticleModal";
 import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
+import ShareButtons from "./ShareButtons";
 
 function calcAutoEnt(revenue: number, type: "commerce" | "service") {
   const threshold = type === "commerce" ? 500000 : 200000;
@@ -122,6 +123,12 @@ export default function AutoEntrepreneurCalculator({ dict, lang, initialRevenue,
               <Row label={dict.simAutoEntTax} value={`${fmt(result.tax)} MAD`} color="amber" bold />
               <p className="text-xs text-slate-400 pt-1">{dict.simAutoEntLegalRef}</p>
             </div>
+            <ShareButtons
+              title={dict.simAutoEntTitle}
+              slug="auto-entrepreneur"
+              shareParams={revenue ? { ca: revenue, type } : undefined}
+              dict={dict}
+            />
             <button
               type="button"
               onClick={() => { setRevenue(""); setResult(null); setError(""); }}

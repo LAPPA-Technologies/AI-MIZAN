@@ -58,11 +58,11 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
   return (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel — bottom sheet mobile / side drawer desktop */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[82vh] lg:bottom-auto lg:top-0 lg:left-auto lg:right-0 lg:h-full lg:w-[440px] lg:rounded-none lg:border-l lg:border-slate-200"
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[82vh] lg:bottom-auto lg:top-0 lg:left-auto lg:right-0 lg:h-full lg:w-[480px] lg:rounded-none lg:border-l lg:border-slate-200"
         style={{ animation: "modalSlideIn 0.28s cubic-bezier(0.32, 0.72, 0, 1)" }}
         dir={isRtl ? "rtl" : "ltr"}
       >
@@ -72,16 +72,19 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-3 flex items-start justify-between gap-3 shrink-0">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-4 lg:px-8 lg:py-5 flex items-start justify-between gap-3 shrink-0">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-green-700">
-              {dict.articleLabel || "Article"} {articleRef.articleNumber}
+            <p className="text-xs font-semibold uppercase tracking-wider text-green-700 mb-1">
+              {dict.articleLabel || "Article"}
             </p>
-            {desc && <p className="text-sm text-slate-700 mt-0.5 leading-snug">{desc}</p>}
+            <p className="text-2xl font-bold text-slate-900 leading-tight">
+              {articleRef.articleNumber}
+            </p>
+            {desc && <p className="text-sm text-slate-500 mt-1 leading-snug">{desc}</p>}
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors shrink-0 mt-0.5"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 transition-colors shrink-0 mt-1"
             aria-label="Close"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -91,7 +94,7 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-5 py-5 lg:px-8 lg:py-6">
           {loading && (
             <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
@@ -109,12 +112,12 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
             </div>
           )}
           {text && (
-            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{text}</p>
+            <p className="text-base text-slate-700 leading-8 whitespace-pre-wrap">{text}</p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 px-5 py-4 shrink-0">
+        <div className="border-t border-slate-100 px-5 py-4 lg:px-8 shrink-0">
           <a
             href={`/laws/${articleRef.code}/articles/${articleRef.articleNumber}?lang=${lang}`}
             target="_blank"

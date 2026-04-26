@@ -7,6 +7,7 @@ import { fmt, rnd } from "../../lib/simulatorHelpers";
 import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
 import ArticleModal from "../laws/ArticleModal";
 import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
+import ShareButtons from "./ShareButtons";
 
 function calcSeverance(grossMonthly: number, years: number) {
   const hourlyRate = grossMonthly / 191.0;
@@ -125,6 +126,12 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
               <Row label={dict.simSeveranceResult} value={`${fmt(result.amount)} MAD`} color="green" bold large />
               <p className="text-xs text-slate-400 pt-1">{dict.simSeveranceLegalRef}</p>
             </div>
+            <ShareButtons
+              title={dict.simSeveranceTitle}
+              slug="licenciement"
+              shareParams={gross && years ? { salaire: gross, annees: years } : undefined}
+              dict={dict}
+            />
             <button
               type="button"
               onClick={() => { setGross(""); setYears(""); setResult(null); setError(""); }}
