@@ -98,6 +98,28 @@ const HomePage = async () => {
 
       <DisclaimerBanner text={dict.disclaimer} />
 
+      {/* Trust bar */}
+      <section className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 py-2 text-center">
+        <div className="flex items-center gap-2 text-slate-700">
+          <span className="text-xl">📚</span>
+          <span className="text-sm font-semibold">
+            +{totalArticles} {locale === "ar" ? "مادة قانونية رسمية" : locale === "fr" ? "articles juridiques officiels" : "official legal articles"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-slate-700">
+          <span className="text-xl">⚖️</span>
+          <span className="text-sm font-semibold">
+            {uniqueLaws.length} {locale === "ar" ? "قوانين مغربية" : locale === "fr" ? "codes marocains" : "Moroccan law codes"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-slate-700">
+          <span className="text-xl">🇲🇦</span>
+          <span className="text-sm font-semibold">
+            {locale === "ar" ? "مجاني للمواطنين دائماً" : locale === "fr" ? "Gratuit pour toujours" : "Always free for citizens"}
+          </span>
+        </div>
+      </section>
+
       {/* Quick topics */}
       <section className="space-y-6">
         <h2 className="section-title">{dict.quickTitle}</h2>
