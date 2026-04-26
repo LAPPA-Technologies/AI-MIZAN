@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -24,10 +25,18 @@ interface NotaireCalculatorProps {
 }
 
 export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireCalculatorProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [price, setPrice] = useState(initialPrice ? String(initialPrice) : "");
   const [result, setResult] = useState<ReturnType<typeof calcNotary> | null>(
     initialPrice && initialPrice > 0 ? calcNotary(initialPrice) : null
   );
+
+  useEffect(() => {
+    if (price) {
+      router.replace(`${pathname}?prix=${price}`, { scroll: false });
+    }
+  }, [price]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -23,11 +24,20 @@ interface AutoEntrepreneurCalculatorProps {
 }
 
 export default function AutoEntrepreneurCalculator({ dict, lang, initialRevenue, initialType }: AutoEntrepreneurCalculatorProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [revenue, setRevenue] = useState(initialRevenue ? String(initialRevenue) : "");
   const [type, setType] = useState<"commerce" | "service">(initialType ?? "commerce");
   const [result, setResult] = useState<ReturnType<typeof calcAutoEnt> | null>(
     initialRevenue && initialRevenue > 0 ? calcAutoEnt(initialRevenue, initialType ?? "commerce") : null
   );
+
+  useEffect(() => {
+    const parts: string[] = [];
+    if (revenue) parts.push(`ca=${revenue}`);
+    parts.push(`type=${type}`);
+    router.replace(`${pathname}?${parts.join("&")}`, { scroll: false });
+  }, [revenue, type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

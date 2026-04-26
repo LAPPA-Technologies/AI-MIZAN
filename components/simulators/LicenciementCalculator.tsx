@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -28,6 +29,8 @@ interface LicenciementCalculatorProps {
 }
 
 export default function LicenciementCalculator({ dict, lang, initialGross, initialYears }: LicenciementCalculatorProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [gross, setGross] = useState(initialGross ? String(initialGross) : "");
   const [years, setYears] = useState(initialYears ? String(initialYears) : "");
   const [result, setResult] = useState<ReturnType<typeof calcSeverance> | null>(
@@ -35,6 +38,13 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
       ? calcSeverance(initialGross, initialYears)
       : null
   );
+
+  useEffect(() => {
+    const parts: string[] = [];
+    if (gross) parts.push(`salaire=${gross}`);
+    if (years) parts.push(`annees=${years}`);
+    if (parts.length) router.replace(`${pathname}?${parts.join("&")}`, { scroll: false });
+  }, [gross, years]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

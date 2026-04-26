@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -47,10 +48,18 @@ interface SalaireCalculatorProps {
 }
 
 export default function SalaireCalculator({ dict, lang, initialGross }: SalaireCalculatorProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [gross, setGross] = useState(initialGross ? String(initialGross) : "");
   const [result, setResult] = useState<ReturnType<typeof calcSalary> | null>(
     initialGross && initialGross > 0 ? calcSalary(initialGross) : null
   );
+
+  useEffect(() => {
+    if (gross) {
+      router.replace(`${pathname}?brut=${gross}`, { scroll: false });
+    }
+  }, [gross]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

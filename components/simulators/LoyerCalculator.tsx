@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
 import { fmt } from "../../lib/simulatorHelpers";
@@ -16,10 +17,18 @@ interface LoyerCalculatorProps {
 }
 
 export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalculatorProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [rent, setRent] = useState(initialRent ? String(initialRent) : "");
   const [result, setResult] = useState<ReturnType<typeof calcRent> | null>(
     initialRent && initialRent > 0 ? calcRent(initialRent) : null
   );
+
+  useEffect(() => {
+    if (rent) {
+      router.replace(`${pathname}?loyer=${rent}`, { scroll: false });
+    }
+  }, [rent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
