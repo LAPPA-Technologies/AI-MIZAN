@@ -249,10 +249,6 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
             </div>
           </div>
 
-          {/* Ask about this article */}
-          <Link href="/chat" className="btn-primary w-full text-center block py-3">
-            {dict.askAbout}
-          </Link>
         </aside>
       </div>
     </div>

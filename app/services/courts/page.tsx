@@ -275,9 +275,6 @@ const CourtsPage = () => {
             {dict.servicesCtaBody || "Ask AI-Mizan about your legal situation and get article-backed answers."}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/chat" className="btn-primary inline-flex items-center gap-2">
-              {dict.navAsk || "Ask AI-Mizan"}
-            </Link>
             <Link href="/laws" className="btn-outline inline-flex items-center gap-2">
               {dict.heroCtaLaws || "Browse Laws"}
             </Link>

@@ -223,11 +223,6 @@ const DocumentsPage = () => {
           <p className="text-sm text-slate-600 max-w-md mx-auto">
             {tr("serviceCtaBody", locale)}
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/chat" className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 shadow-md shadow-green-200 transition-all">
-              {dict.navAsk || "Ask AI-Mizan"}
-            </Link>
-          </div>
         </div>
 
         {/* Footer */}

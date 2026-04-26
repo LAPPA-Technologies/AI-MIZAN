@@ -9,6 +9,7 @@ const HomePage = async () => {
   const locale = await getLocale();
   const dict = getDictionary(locale);
   const updates = await prisma.lawArticle.findMany({
+    where: { code: { in: ["family_code", "labor_code"] } },
     orderBy: { updatedAt: "desc" },
     take: 3
   });
@@ -33,17 +34,22 @@ const HomePage = async () => {
         <div className="relative space-y-6 lg:grid lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-8">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur-sm border border-white/20">
-              <span>⚖️</span>
+              <span>🇲🇦</span>
               <span>{dict.headerTagline || "Moroccan Law Engine"}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-              <span className="block">{dict.heroTitlePrimary}</span>
-              <span className="mt-2 block text-green-200">
-                {dict.heroTitleSecondary}
-              </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
+              {locale === "ar"
+                ? "اعرف حقوقك. مجاناً."
+                : locale === "fr"
+                ? "Connaissez vos droits. Gratuitement."
+                : "Know Your Rights. For Free."}
             </h1>
             <p className="max-w-2xl text-base sm:text-lg text-green-100/90">
-              {dict.heroSubtitle}
+              {locale === "ar"
+                ? "أدوات قانونية مغربية مجانية — احسب إرثك، راتبك، تعويضك. مبني على القانون المغربي الرسمي."
+                : locale === "fr"
+                ? "Outils juridiques marocains gratuits — calculez votre héritage, salaire, indemnité. Basé sur le droit marocain officiel."
+                : "Free Moroccan legal tools — calculate your inheritance, salary, severance. Based on official Moroccan law."}
             </p>
             <form action="/laws" className="flex flex-col sm:flex-row gap-3">
               <input
@@ -56,18 +62,17 @@ const HomePage = async () => {
               </button>
             </form>
             <div className="flex flex-wrap gap-3">
-              <Link className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-green-800 shadow-sm hover:bg-green-50 transition-colors" href="/laws">
-                {dict.heroCtaLaws}
+              <Link className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-green-800 shadow-sm hover:bg-green-50 transition-colors" href="/simulateurs/heritage">
+                {locale === "ar" ? "احسب إرثك" : locale === "fr" ? "Calculez votre héritage" : "Calculate Inheritance"}
               </Link>
-              <Link className="rounded-lg border-2 border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors" href="/simulateurs">
-                {dict.navSimulators || "Simulators"}
+              <Link className="rounded-lg border-2 border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors" href="/laws">
+                {dict.heroCtaLaws}
               </Link>
             </div>
           </div>
 
-          {/* Stats & How it works */}
+          {/* Stats */}
           <div className="space-y-4">
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-4 text-center">
                 <div className="text-2xl font-bold">{totalArticles}</div>
@@ -78,27 +83,14 @@ const HomePage = async () => {
                 <div className="text-xs text-green-200 mt-1">{dict.otherLegalCodes || "Legal Codes"}</div>
               </div>
             </div>
-
-            {/* How it works */}
-            <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-green-200">{dict.howTitle}</h2>
-              <div className="mt-4 space-y-4">
-                {[
-                  { title: dict.howStep1Title, body: dict.howStep1Body },
-                  { title: dict.howStep2Title, body: dict.howStep2Body },
-                  { title: dict.howStep3Title, body: dict.howStep3Body },
-                ].map((step, index) => (
-                  <div key={step.title} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-sm">{step.title}</p>
-                      <p className="text-xs text-green-200/80">{step.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5 text-center space-y-2">
+              <div className="text-3xl">🇲🇦</div>
+              <p className="text-sm font-semibold text-white">
+                {locale === "ar" ? "مجاني للمواطنين دائماً" : locale === "fr" ? "Gratuit pour toujours" : "Always free for citizens"}
+              </p>
+              <p className="text-xs text-green-200/80">
+                {locale === "ar" ? "لا تسجيل، لا رسوم، لا إعلانات" : locale === "fr" ? "Sans inscription, sans frais" : "No signup, no fees, no ads"}
+              </p>
             </div>
           </div>
         </div>
@@ -106,39 +98,56 @@ const HomePage = async () => {
 
       <DisclaimerBanner text={dict.disclaimer} />
 
-      {/* AI Chat CTA */}
-      <section className="rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 text-white px-6 py-8 flex flex-col sm:flex-row items-center gap-6">
-        <div className="flex-1 space-y-2">
-          <h2 className="text-xl sm:text-2xl font-bold">
-            {dict.chatCtaTitle || (locale === "ar" ? "اطرح سؤالك القانوني مباشرةً" : locale === "fr" ? "Posez votre question juridique directement" : "Ask your legal question directly")}
-          </h2>
-          <p className="text-green-100 text-sm">
-            {dict.chatCtaSubtitle || (locale === "ar" ? "AI-Mizan يجيب استناداً إلى القانون المغربي الرسمي مع الإشارة إلى المواد القانونية." : locale === "fr" ? "AI-Mizan répond en citant les articles officiels du droit marocain." : "AI-Mizan answers by citing official Moroccan law articles.")}
-          </p>
+      {/* Trust bar */}
+      <section className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 py-2 text-center">
+        <div className="flex items-center gap-2 text-slate-700">
+          <span className="text-xl">📚</span>
+          <span className="text-sm font-semibold">
+            +{totalArticles} {locale === "ar" ? "مادة قانونية رسمية" : locale === "fr" ? "articles juridiques officiels" : "official legal articles"}
+          </span>
         </div>
-        <Link
-          href="/chat"
-          className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-white text-green-800 font-bold px-6 py-3 text-sm hover:bg-green-50 shadow-md transition-all whitespace-nowrap"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-          {dict.navAsk || (locale === "ar" ? "ابدأ المحادثة" : locale === "fr" ? "Démarrer le chat" : "Start Chat")}
-        </Link>
+        <div className="flex items-center gap-2 text-slate-700">
+          <span className="text-xl">⚖️</span>
+          <span className="text-sm font-semibold">
+            {uniqueLaws.length} {locale === "ar" ? "قوانين مغربية" : locale === "fr" ? "codes marocains" : "Moroccan law codes"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-slate-700">
+          <span className="text-xl">🇲🇦</span>
+          <span className="text-sm font-semibold">
+            {locale === "ar" ? "مجاني للمواطنين دائماً" : locale === "fr" ? "Gratuit pour toujours" : "Always free for citizens"}
+          </span>
+        </div>
       </section>
 
-      {/* Quick topics → linked to specific guides */}
+      {/* Quick topics */}
       <section className="space-y-6">
         <h2 className="section-title">{dict.quickTitle}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: "🏠", text: dict.quickRent, href: "/guides#housing" },
-            { icon: "💼", text: dict.quickWork, href: "/guides#employment" },
-            { icon: "👨‍👩‍👧", text: dict.quickFamily, href: "/guides#family" },
-            { icon: "🚗", text: dict.quickAccidents, href: "/laws/penal_code/articles" },
+            {
+              icon: "👨‍👩‍👧",
+              text: locale === "ar" ? "الأسرة والطلاق" : locale === "fr" ? "Famille et divorce" : "Family & Divorce",
+              href: "/simulateurs/divorce",
+            },
+            {
+              icon: "💼",
+              text: locale === "ar" ? "حقوق الشغل" : locale === "fr" ? "Droits du travail" : "Labor Rights",
+              href: "/simulateurs/licenciement",
+            },
+            {
+              icon: "📊",
+              text: locale === "ar" ? "الإرث والتركة" : locale === "fr" ? "Héritage et succession" : "Inheritance",
+              href: "/simulateurs/heritage",
+            },
+            {
+              icon: "🏠",
+              text: locale === "ar" ? "السكن والكراء" : locale === "fr" ? "Logement et location" : "Housing & Rent",
+              href: "/simulateurs/loyer",
+            },
           ].map((item) => (
             <Link
-              key={item.text}
+              key={item.href}
               href={item.href}
               className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-700 hover:border-green-300 hover:bg-green-50 transition-all shadow-soft"
             >
@@ -153,7 +162,7 @@ const HomePage = async () => {
       <section className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">
-            {locale === "ar" ? "أدوات قانونية مفيدة" : locale === "fr" ? "Outils juridiques utiles" : "Useful Legal Tools"}
+            {locale === "ar" ? "أدوات قانونية مجانية" : locale === "fr" ? "Outils juridiques gratuits" : "Free Legal Tools"}
           </h2>
           <Link href="/simulateurs" className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors">
             {locale === "ar" ? "جميع الأدوات" : locale === "fr" ? "Tous les outils" : "All tools"} →
@@ -163,10 +172,10 @@ const HomePage = async () => {
           {[
             {
               icon: "📊",
-              title: locale === "ar" ? "حاسبة الفرائض (الإرث)" : locale === "fr" ? "Calculateur de succession" : "Inheritance Calculator",
-              desc: locale === "ar" ? "توزيع التركة بين الورثة وفق المدونة المغربية" : locale === "fr" ? "Répartition de succession selon la Moudawana" : "Distribute estate per Moroccan Moudawana",
+              title: locale === "ar" ? "حاسبة الإرث (الفرائض)" : locale === "fr" ? "Calculateur de succession" : "Inheritance Calculator",
+              desc: locale === "ar" ? "وزع التركة وفق الشريعة والقانون المغربي" : locale === "fr" ? "Répartition selon la Moudawana" : "Distribute estate per Moroccan Moudawana",
               href: "/simulateurs/heritage",
-              badge: locale === "ar" ? "جديد" : locale === "fr" ? "Nouveau" : "New",
+              badge: locale === "ar" ? "الأكثر استخداماً" : locale === "fr" ? "Le plus utilisé" : "Most used",
             },
             {
               icon: "💰",
@@ -180,9 +189,27 @@ const HomePage = async () => {
               desc: locale === "ar" ? "احسب تعويضك حسب مدة الخدمة" : locale === "fr" ? "Calculer selon l'ancienneté" : "Calculate based on years of service",
               href: "/simulateurs/licenciement",
             },
+            {
+              icon: "🏠",
+              title: locale === "ar" ? "ضمان الإيجار" : locale === "fr" ? "Garantie de loyer" : "Rent Deposit",
+              desc: locale === "ar" ? "الحد الأقصى القانوني لضمان الإيجار" : locale === "fr" ? "Plafond légal de la caution" : "Legal maximum for rental deposit",
+              href: "/simulateurs/loyer",
+            },
+            {
+              icon: "🏛️",
+              title: locale === "ar" ? "رسوم الموثق" : locale === "fr" ? "Frais de notaire" : "Notary Fees",
+              desc: locale === "ar" ? "تقدير رسوم التوثيق والتسجيل" : locale === "fr" ? "Estimation des frais de notaire" : "Estimate notary and registration fees",
+              href: "/simulateurs/notaire",
+            },
+            {
+              icon: "💼",
+              title: locale === "ar" ? "المقاول الذاتي" : locale === "fr" ? "Auto-entrepreneur" : "Self-Employed",
+              desc: locale === "ar" ? "احسب ضرائبك كمقاول ذاتي" : locale === "fr" ? "Calculez vos cotisations auto-entrepreneur" : "Calculate your self-employed taxes",
+              href: "/simulateurs/auto-entrepreneur",
+            },
           ].map((tool) => (
             <Link
-              key={tool.title}
+              key={tool.href}
               href={tool.href}
               className="card group hover:border-green-200 hover:shadow-md transition-all flex items-start gap-3"
             >
@@ -199,6 +226,13 @@ const HomePage = async () => {
             </Link>
           ))}
         </div>
+        <p className="text-center text-sm text-slate-500">
+          {locale === "ar"
+            ? "احسب نتيجتك وشاركها مباشرة على واتساب 📲"
+            : locale === "fr"
+            ? "Calculez votre résultat et partagez-le directement sur WhatsApp 📲"
+            : "Calculate your result and share it directly on WhatsApp 📲"}
+        </p>
       </section>
 
       {/* Featured codes */}
