@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "../../../../../lib/prisma";
 import { getDictionary, getLocale } from "../../../../../lib/i18n";
 import { getLawShortName } from "../../../../../lib/lawMetadata";
+import { makeArticleLinksClickable } from "../../../../../lib/articleLinks";
 import ArticleLanguageSelector from "./ArticleLanguageSelector";
 import TranslateButton from "../../../../../components/TranslateButton";
 
@@ -157,9 +158,11 @@ const ArticleDetailPage = async ({ params, searchParams }: Props) => {
                 </div>
 
                 <div className="border-t border-slate-100 pt-5">
-                  <p className="whitespace-pre-line text-base sm:text-lg leading-[1.9] text-slate-800">
-                    {activeArticle.text}
-                  </p>
+                  {/* Text from own DB — dangerouslySetInnerHTML is safe here */}
+                  <p
+                    className="whitespace-pre-line text-base sm:text-lg leading-[1.9] text-slate-800"
+                    dangerouslySetInnerHTML={{ __html: makeArticleLinksClickable(activeArticle.text, code, lang) }}
+                  />
                 </div>
 
                 {/* Translate to English button — only visible when UI language is English */}
