@@ -19,4 +19,12 @@ DB_PDF_EXTRACTION_DEBUGING/
 .DS_Store
 Thumbs.db
 *.swp
-*.swo.claude/
+*.swo
+.claude/
+
+# Strategic docs — keep local only
+STATUS_REPORT.md
+CODEBASE_CONTEXT.md
+DEPLOYMENT.md
+ARCHITECTURE.md
+V1_IMPROVEMENTS.md
