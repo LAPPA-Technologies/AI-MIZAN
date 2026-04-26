@@ -19,8 +19,8 @@ const GuidesPage = async () => {
         dict.guideWorkStep3 || "File complaint with Labour Inspector within 90 days",
         dict.guideWorkStep4 || "If unresolved, file case at Labour Court",
       ],
-      laws: ["obligations_contracts"],
-      cta: { href: "/laws/obligations_contracts/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["labor_code"],
+      cta: { href: "/laws/labor_code/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "🏠",
@@ -61,8 +61,8 @@ const GuidesPage = async () => {
         dict.guidePenalStep3 || "Arraignment before competent court",
         dict.guidePenalStep4 || "Right to appeal within 10 days of verdict",
       ],
-      laws: ["penal_code"],
-      cta: { href: "/laws/penal_code/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
+      laws: ["criminal_procedure"],
+      cta: { href: "/laws/criminal_procedure/articles?lang=" + locale, label: dict.guideViewCode || "View related articles" },
     },
     {
       icon: "📜",
