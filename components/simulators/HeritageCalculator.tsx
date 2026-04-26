@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { fmt } from "../../lib/simulatorHelpers";
 
@@ -283,6 +283,18 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
     fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0,
   });
   const [results, setResults] = useState<HeirResult[] | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const estVal = parseFloat(estate);
+      if (!isNaN(estVal) && estVal > 0) {
+        setResults(calcInheritance({ estate: estVal, ...inp }));
+      }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [estate, inp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const heirFields: Array<{ key: keyof typeof inp; ar: string; fr: string; en: string; max?: number }> = [
     { key: "husband", ar: "زوج", fr: "Mari", en: "Husband", max: 1 },
@@ -325,12 +337,11 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
           <label className="block text-sm font-semibold text-slate-800 mb-1">
             {t("قيمة التركة الصافية (درهم)", "Valeur nette de la succession (MAD)", "Net Estate Value (MAD)")}
           </label>
-          <input type="number" min="1" step="1000"
+          <input type="number" min="1"
             value={estate}
             onChange={(e) => { setEstate(e.target.value); setResults(null); }}
             placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
             className="input-shell"
-            required
           />
         </div>
 
@@ -348,7 +359,6 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
                   type="number"
                   min="0"
                   max={f.max ?? 20}
-                  step="1"
                   value={inp[f.key] || ""}
                   onChange={(e) => {
                     const val = parseInt(e.target.value) || 0;

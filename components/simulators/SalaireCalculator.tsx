@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
@@ -54,6 +54,8 @@ export default function SalaireCalculator({ dict, lang, initialGross }: SalaireC
   const [result, setResult] = useState<ReturnType<typeof calcSalary> | null>(
     initialGross && initialGross > 0 ? calcSalary(initialGross) : null
   );
+  const [error, setError] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (gross) {
@@ -61,10 +63,25 @@ export default function SalaireCalculator({ dict, lang, initialGross }: SalaireC
     }
   }, [gross]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const g = parseFloat(gross);
+      if (!isNaN(g) && g > 0) {
+        setError("");
+        setResult(calcSalary(g));
+      }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [gross]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!gross) { setError(dict.simErrorRequired || "Please enter a value"); return; }
     const g = parseFloat(gross);
-    if (!isNaN(g) && g > 0) setResult(calcSalary(g));
+    if (isNaN(g) || g <= 0) { setError(dict.simErrorPositive || "Please enter a positive number"); return; }
+    setError("");
+    setResult(calcSalary(g));
   };
 
   return (
@@ -75,13 +92,13 @@ export default function SalaireCalculator({ dict, lang, initialGross }: SalaireC
             {dict.simSalaryGross}
           </label>
           <input
-            id="salary-gross" type="number" min="0" step="100"
+            id="salary-gross" type="number" min="0"
             value={gross}
-            onChange={(e) => { setGross(e.target.value); setResult(null); }}
+            onChange={(e) => { setGross(e.target.value); setResult(null); setError(""); }}
             placeholder="10000"
             className="input-shell w-full"
-            required
           />
+          {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
         </div>
         <button type="submit" className="btn-primary self-end px-6 py-2">
           {dict.simSalaryCalculate}
@@ -94,7 +111,7 @@ export default function SalaireCalculator({ dict, lang, initialGross }: SalaireC
           lang={lang}
           dict={dict}
           shareParams={gross ? { brut: gross } : undefined}
-          onReset={() => { setGross(""); setResult(null); }}
+          onReset={() => { setGross(""); setResult(null); setError(""); }}
         >
           <div className="space-y-2">
             <Row label={dict.simSalaryCNSS} value={`-${fmt(result.cnss)} MAD`} color="amber" />

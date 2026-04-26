@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
@@ -31,6 +31,8 @@ export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireC
   const [result, setResult] = useState<ReturnType<typeof calcNotary> | null>(
     initialPrice && initialPrice > 0 ? calcNotary(initialPrice) : null
   );
+  const [error, setError] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (price) {
@@ -38,10 +40,25 @@ export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireC
     }
   }, [price]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const p = parseFloat(price);
+      if (!isNaN(p) && p > 0) {
+        setError("");
+        setResult(calcNotary(p));
+      }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [price]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!price) { setError(dict.simErrorRequired || "Please enter a value"); return; }
     const p = parseFloat(price);
-    if (!isNaN(p) && p > 0) setResult(calcNotary(p));
+    if (isNaN(p) || p <= 0) { setError(dict.simErrorPositive || "Please enter a positive number"); return; }
+    setError("");
+    setResult(calcNotary(p));
   };
 
   return (
@@ -52,13 +69,13 @@ export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireC
             {dict.simNotaryPrice}
           </label>
           <input
-            id="notary-price" type="number" min="0" step="10000"
+            id="notary-price" type="number" min="0"
             value={price}
-            onChange={(e) => { setPrice(e.target.value); setResult(null); }}
+            onChange={(e) => { setPrice(e.target.value); setResult(null); setError(""); }}
             placeholder="1000000"
             className="input-shell w-full"
-            required
           />
+          {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
         </div>
         <button type="submit" className="btn-primary self-end px-6 py-2">
           {dict.simSalaryCalculate}
@@ -71,7 +88,7 @@ export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireC
           lang={lang}
           dict={dict}
           shareParams={price ? { prix: price } : undefined}
-          onReset={() => { setPrice(""); setResult(null); }}
+          onReset={() => { setPrice(""); setResult(null); setError(""); }}
         >
           <div className="space-y-2">
             <Row label={dict.simNotaryRegistration} value={`${fmt(result.registration)} MAD`} color="amber" />

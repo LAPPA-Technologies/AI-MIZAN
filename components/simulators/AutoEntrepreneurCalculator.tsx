@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
@@ -31,6 +31,8 @@ export default function AutoEntrepreneurCalculator({ dict, lang, initialRevenue,
   const [result, setResult] = useState<ReturnType<typeof calcAutoEnt> | null>(
     initialRevenue && initialRevenue > 0 ? calcAutoEnt(initialRevenue, initialType ?? "commerce") : null
   );
+  const [error, setError] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const parts: string[] = [];
@@ -39,10 +41,25 @@ export default function AutoEntrepreneurCalculator({ dict, lang, initialRevenue,
     router.replace(`${pathname}?${parts.join("&")}`, { scroll: false });
   }, [revenue, type]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const rev = parseFloat(revenue);
+      if (!isNaN(rev) && rev > 0) {
+        setError("");
+        setResult(calcAutoEnt(rev, type));
+      }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [revenue, type]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!revenue) { setError(dict.simErrorRequired || "Please enter a value"); return; }
     const rev = parseFloat(revenue);
-    if (!isNaN(rev) && rev > 0) setResult(calcAutoEnt(rev, type));
+    if (isNaN(rev) || rev <= 0) { setError(dict.simErrorPositive || "Please enter a positive number"); return; }
+    setError("");
+    setResult(calcAutoEnt(rev, type));
   };
 
   return (
@@ -53,13 +70,13 @@ export default function AutoEntrepreneurCalculator({ dict, lang, initialRevenue,
             {dict.simAutoEntRevenue}
           </label>
           <input
-            id="ae-revenue" type="number" min="0" step="10000"
+            id="ae-revenue" type="number" min="0"
             value={revenue}
-            onChange={(e) => { setRevenue(e.target.value); setResult(null); }}
+            onChange={(e) => { setRevenue(e.target.value); setResult(null); setError(""); }}
             placeholder="300000"
             className="input-shell w-full"
-            required
           />
+          {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
         </div>
         <div>
           <label htmlFor="ae-type" className="block text-sm font-medium text-slate-700 mb-1">
@@ -86,7 +103,7 @@ export default function AutoEntrepreneurCalculator({ dict, lang, initialRevenue,
           lang={lang}
           dict={dict}
           shareParams={revenue ? { ca: revenue, type } : undefined}
-          onReset={() => { setRevenue(""); setResult(null); }}
+          onReset={() => { setRevenue(""); setResult(null); setError(""); }}
         >
           <div className="space-y-2">
             <Row

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import SimulatorResultCard from "./SimulatorResultCard";
 import { Row } from "./Row";
@@ -38,6 +38,8 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
       ? calcSeverance(initialGross, initialYears)
       : null
   );
+  const [error, setError] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const parts: string[] = [];
@@ -46,11 +48,30 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
     if (parts.length) router.replace(`${pathname}?${parts.join("&")}`, { scroll: false });
   }, [gross, years]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const g = parseFloat(gross);
+      const y = parseFloat(years);
+      if (!isNaN(g) && g > 0 && !isNaN(y) && y > 0) {
+        setError("");
+        setResult(calcSeverance(g, y));
+      }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [gross, years]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!gross || !years) { setError(dict.simErrorRequired || "Please enter a value"); return; }
     const g = parseFloat(gross);
     const y = parseFloat(years);
-    if (!isNaN(g) && g > 0 && !isNaN(y) && y > 0) setResult(calcSeverance(g, y));
+    if (isNaN(g) || g <= 0 || isNaN(y) || y <= 0) {
+      setError(dict.simErrorPositive || "Please enter a positive number");
+      return;
+    }
+    setError("");
+    setResult(calcSeverance(g, y));
   };
 
   return (
@@ -61,12 +82,11 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
             {dict.simSeveranceGross}
           </label>
           <input
-            id="sev-gross" type="number" min="0" step="100"
+            id="sev-gross" type="number" min="0"
             value={gross}
-            onChange={(e) => { setGross(e.target.value); setResult(null); }}
+            onChange={(e) => { setGross(e.target.value); setResult(null); setError(""); }}
             placeholder="8000"
             className="input-shell w-full"
-            required
           />
         </div>
         <div>
@@ -74,17 +94,19 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
             {dict.simSeveranceYears}
           </label>
           <input
-            id="sev-years" type="number" min="0.5" step="0.5"
+            id="sev-years" type="number" min="0"
             value={years}
-            onChange={(e) => { setYears(e.target.value); setResult(null); }}
+            onChange={(e) => { setYears(e.target.value); setResult(null); setError(""); }}
             placeholder="10"
             className="input-shell w-full"
-            required
           />
         </div>
-        <button type="submit" className="btn-primary self-end px-6 py-2">
-          {dict.simSalaryCalculate}
-        </button>
+        <div className="flex flex-col justify-end gap-1">
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <button type="submit" className="btn-primary px-6 py-2">
+            {dict.simSalaryCalculate}
+          </button>
+        </div>
       </form>
       {result && (
         <SimulatorResultCard
@@ -93,7 +115,7 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
           lang={lang}
           dict={dict}
           shareParams={gross && years ? { salaire: gross, annees: years } : undefined}
-          onReset={() => { setGross(""); setYears(""); setResult(null); }}
+          onReset={() => { setGross(""); setYears(""); setResult(null); setError(""); }}
         >
           <div className="space-y-2">
             <Row label={dict.simSeveranceResult} value={`${fmt(result.amount)} MAD`} color="green" bold large />
