@@ -1,5 +1,4 @@
 import { getDictionary, getLocale } from "../../lib/i18n";
-import DisclaimerBanner from "../../components/DisclaimerBanner";
 import Container from "../../components/Container";
 
 export default async function SimulateursLayout({
@@ -13,7 +12,6 @@ export default async function SimulateursLayout({
   return (
     <Container>
       <div className="section space-y-6">
-        <DisclaimerBanner text={dict.simResultDisclaimer} />
         {children}
       </div>
     </Container>
