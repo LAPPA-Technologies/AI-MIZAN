@@ -268,20 +268,25 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
 
 // ── Component ──
 
+type DeceasedGender = "male" | "female";
+
 interface HeritageCalculatorProps {
   dict: Record<string, string>;
   lang: string;
 }
 
+const BLANK_INP = {
+  husband: 0, wife: 0, son: 0, daughter: 0, father: 0, mother: 0,
+  paternalGrandfather: 0, paternalGrandmother: 0, maternalGrandmother: 0,
+  fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0,
+};
+
 export default function HeritageCalculator({ dict, lang }: HeritageCalculatorProps) {
   const t = (ar: string, fr: string, en: string) => lang === "ar" ? ar : lang === "fr" ? fr : en;
 
+  const [deceasedGender, setDeceasedGender] = useState<DeceasedGender | null>(null);
   const [estate, setEstate] = useState("");
-  const [inp, setInp] = useState<Omit<InheritanceInput, "estate">>({
-    husband: 0, wife: 0, son: 0, daughter: 0, father: 0, mother: 0,
-    paternalGrandfather: 0, paternalGrandmother: 0, maternalGrandmother: 0,
-    fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0,
-  });
+  const [inp, setInp] = useState<Omit<InheritanceInput, "estate">>(BLANK_INP);
   const [results, setResults] = useState<HeirResult[] | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -296,9 +301,14 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [estate, inp]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const heirFields: Array<{ key: keyof typeof inp; ar: string; fr: string; en: string; max?: number }> = [
-    { key: "husband", ar: "زوج", fr: "Mari", en: "Husband", max: 1 },
-    { key: "wife", ar: "زوجة / زوجات", fr: "Épouse(s)", en: "Wife / Wives", max: 4 },
+  function handleGenderSelect(g: DeceasedGender) {
+    setDeceasedGender(g);
+    // Reset spouse fields when switching gender to prevent illegal state
+    setInp(prev => ({ ...prev, husband: 0, wife: 0 }));
+    setResults(null);
+  }
+
+  const otherHeirFields: Array<{ key: keyof typeof inp; ar: string; fr: string; en: string; max?: number }> = [
     { key: "son", ar: "ابن / أبناء", fr: "Fils", en: "Son(s)" },
     { key: "daughter", ar: "ابنة / بنات", fr: "Fille(s)", en: "Daughter(s)" },
     { key: "father", ar: "أب", fr: "Père", en: "Father", max: 1 },
@@ -322,6 +332,13 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
 
   const hasAnyHeir = Object.values(inp).some(v => v > 0);
 
+  function doReset() {
+    setResults(null);
+    setEstate("");
+    setDeceasedGender(null);
+    setInp(BLANK_INP);
+  }
+
   return (
     <div className="space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
@@ -333,53 +350,135 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
       </div>
 
       <form onSubmit={onCalculate} className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-slate-800 mb-1">
-            {t("قيمة التركة الصافية (درهم)", "Valeur nette de la succession (MAD)", "Net Estate Value (MAD)")}
-          </label>
-          <input type="number" min="1"
-            value={estate}
-            onChange={(e) => { setEstate(e.target.value); setResults(null); }}
-            placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
-            className="input-shell"
-          />
-        </div>
-
+        {/* Gender selector — must be first */}
         <div>
           <p className="text-sm font-semibold text-slate-800 mb-3">
-            {t("الورثة (أدخل الأعداد)", "Héritiers (saisir les effectifs)", "Heirs (enter counts)")}
+            {t("من المتوفى؟", "Qui est le défunt ?", "Who passed away?")}
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {heirFields.map((f) => (
-              <div key={f.key} className="space-y-1">
-                <label className="block text-xs font-medium text-slate-600">
-                  {t(f.ar, f.fr, f.en)}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max={f.max ?? 20}
-                  value={inp[f.key] || ""}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    setInp(prev => ({ ...prev, [f.key]: val }));
-                    setResults(null);
-                  }}
-                  placeholder="0"
-                  className="input-shell py-2 text-center"
-                />
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleGenderSelect("male")}
+              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-semibold text-sm transition-all ${
+                deceasedGender === "male"
+                  ? "border-green-500 bg-green-50 text-green-800"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <span className="text-3xl" role="img" aria-label="male">👤</span>
+              <span>{t("رجل", "Homme", "Man")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleGenderSelect("female")}
+              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-semibold text-sm transition-all ${
+                deceasedGender === "female"
+                  ? "border-green-500 bg-green-50 text-green-800"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              <span className="text-3xl" role="img" aria-label="female">👤</span>
+              <span>{t("امرأة", "Femme", "Woman")}</span>
+            </button>
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={!estate || !hasAnyHeir}
-          className="btn-primary w-full py-3 text-base"
-        >
-          {t("احسب التركة", "Calculer la succession", "Calculate Inheritance")}
-        </button>
+        {/* Gate all other fields behind gender selection */}
+        {!deceasedGender ? (
+          <p className="text-sm text-slate-400 text-center py-5 border border-dashed border-slate-200 rounded-xl">
+            {t("اختر أولاً من المتوفى", "Choisissez d'abord le défunt", "Select who passed away first")}
+          </p>
+        ) : (
+          <>
+            {/* Estate value */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">
+                {t("قيمة التركة الصافية (درهم)", "Valeur nette de la succession (MAD)", "Net Estate Value (MAD)")}
+              </label>
+              <input type="number" min="1"
+                value={estate}
+                onChange={(e) => { setEstate(e.target.value); setResults(null); }}
+                placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
+                className="input-shell"
+              />
+            </div>
+
+            {/* Spouse field — gender-conditional */}
+            <div>
+              <p className="text-sm font-semibold text-slate-800 mb-3">
+                {t("الزوج / الزوجة", "Conjoint(e)", "Spouse")}
+              </p>
+              {deceasedGender === "male" ? (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-slate-600">
+                    {t("عدد الزوجات (حتى 4)", "Nombre d'épouses (max 4)", "Number of wives (max 4)")}
+                  </label>
+                  <input
+                    type="number" min="0" max="4"
+                    value={inp.wife || ""}
+                    onChange={(e) => { setInp(prev => ({ ...prev, wife: parseInt(e.target.value) || 0 })); setResults(null); }}
+                    placeholder="0"
+                    className="input-shell py-2 text-center w-32"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <label className="text-xs font-medium text-slate-600">
+                    {t("هل تركت زوجاً؟", "A-t-elle laissé un mari ?", "Did she leave a husband?")}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { setInp(prev => ({ ...prev, husband: prev.husband > 0 ? 0 : 1 })); setResults(null); }}
+                    className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold border-2 transition-colors ${
+                      inp.husband > 0
+                        ? "border-green-500 bg-green-50 text-green-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {inp.husband > 0 ? t("نعم", "Oui", "Yes") : t("لا", "Non", "No")}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Other heirs */}
+            <div>
+              <p className="text-sm font-semibold text-slate-800 mb-3">
+                {t("باقي الورثة", "Autres héritiers", "Other heirs")}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {otherHeirFields.map((f) => (
+                  <div key={f.key} className="space-y-1">
+                    <label className="block text-xs font-medium text-slate-600">
+                      {t(f.ar, f.fr, f.en)}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={f.max ?? 20}
+                      value={inp[f.key] || ""}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setInp(prev => ({ ...prev, [f.key]: val }));
+                        setResults(null);
+                      }}
+                      placeholder="0"
+                      className="input-shell py-2 text-center"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!estate || !hasAnyHeir}
+              className="btn-primary w-full py-3 text-base"
+            >
+              {t("احسب التركة", "Calculer la succession", "Calculate Inheritance")}
+            </button>
+          </>
+        )}
       </form>
 
       {results && results.length > 0 && (
@@ -388,13 +487,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
           slug="heritage"
           lang={lang}
           dict={dict}
-          onReset={() => {
-            setResults(null);
-            setEstate("");
-            setInp({ husband: 0, wife: 0, son: 0, daughter: 0, father: 0, mother: 0,
-              paternalGrandfather: 0, paternalGrandmother: 0, maternalGrandmother: 0,
-              fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0 });
-          }}
+          onReset={doReset}
         >
           <div className="space-y-2">
             {results.map((r, i) => (
