@@ -9,7 +9,13 @@ export type ArticleRef = {
 
 export const CALCULATOR_ARTICLES: Record<string, ArticleRef[]> = {
   loyer: [
-    // القانون 67.12 governs residential tenancy in Morocco — not yet in DB
+    // القانون رقم 67.12 (residential tenancy law) is the correct source for rent deposit
+    // and eviction rules in Morocco. It is NOT yet ingested into our law_articles DB table
+    // (confirmed: only 8 codes exist — see lib/calculatorArticles.ts comment).
+    // These entries are intentionally marked inDb: false so CalculatorArticlesStrip
+    // renders them as non-clickable informational pills rather than opening the modal.
+    // TODO: ingest القانون 67.12 into the DB in a future data session, then set inDb: true
+    // and update the code field to the correct slug (e.g. "residential_tenancy").
     { code: "law_67_12", articleNumber: "6", descAr: "القانون 67.12 — الضمان الكرائي: لا يتجاوز شهرين", descFr: "Loi 67-12 — Dépôt de garantie: max 2 mois de loyer", descEn: "Law 67-12 — Security deposit: max 2 months' rent", inDb: false },
     { code: "law_67_12", articleNumber: "19", descAr: "القانون 67.12 — مدة الإخلاء وإشعار المغادرة", descFr: "Loi 67-12 — Délai d'expulsion et préavis de départ", descEn: "Law 67-12 — Eviction timeline and departure notice", inDb: false },
   ],

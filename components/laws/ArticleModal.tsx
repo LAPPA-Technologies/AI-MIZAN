@@ -56,23 +56,23 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
   const desc = lang === "ar" ? articleRef.descAr : lang === "fr" ? articleRef.descFr : articleRef.descEn;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Panel — bottom sheet mobile / side drawer desktop */}
+      {/* Panel — bottom sheet on all screen sizes, centered on desktop */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[82vh] lg:bottom-auto lg:top-0 lg:left-auto lg:right-0 lg:h-full lg:w-[480px] lg:rounded-none lg:border-l lg:border-slate-200"
-        style={{ animation: "modalSlideIn 0.28s cubic-bezier(0.32, 0.72, 0, 1)" }}
+        className="relative w-full md:max-w-2xl bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[80vh] md:max-h-[70vh]"
+        style={{ animation: "modalSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1)" }}
         dir={isRtl ? "rtl" : "ltr"}
       >
-        {/* Drag handle — mobile only */}
-        <div className="flex justify-center pt-3 pb-1 lg:hidden">
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1">
           <div className="h-1 w-10 rounded-full bg-slate-200" />
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-4 lg:px-8 lg:py-5 flex items-start justify-between gap-3 shrink-0">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-4 md:px-8 flex items-start justify-between gap-3 shrink-0">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-green-700 mb-1">
               {dict.articleLabel || "Article"}
@@ -94,7 +94,7 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 lg:px-8 lg:py-6">
+        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-8 md:py-6">
           {loading && (
             <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
@@ -117,7 +117,7 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 px-5 py-4 lg:px-8 shrink-0">
+        <div className="border-t border-slate-100 px-5 py-4 md:px-8 shrink-0">
           <a
             href={`/laws/${articleRef.code}/articles/${articleRef.articleNumber}?lang=${lang}`}
             target="_blank"
@@ -133,15 +133,9 @@ export default function ArticleModal({ articleRef, lang, dict, onClose }: Articl
       </div>
 
       <style jsx global>{`
-        @keyframes modalSlideIn {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        @media (min-width: 1024px) {
-          @keyframes modalSlideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-          }
+        @keyframes modalSlideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
     </div>
