@@ -272,20 +272,6 @@ const ServicesPage = async () => {
           </div>
         </section>
 
-        {/* ── CTA ── */}
-        <div className="surface bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-center space-y-3 py-8">
-          <h3 className="text-lg font-bold text-slate-900">
-            {dict.servicesCta || "Need legal guidance?"}
-          </h3>
-          <p className="text-sm text-slate-600 max-w-md mx-auto">
-            {dict.servicesCtaBody || "Ask AI-Mizan about your legal situation and get article-backed answers in Arabic, French, or English."}
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/laws" className="btn-outline inline-flex items-center gap-2">
-              {dict.heroCtaLaws || "Browse Laws"}
-            </Link>
-          </div>
-        </div>
       </div>
     </Container>
     <Footer labels={dict} />
