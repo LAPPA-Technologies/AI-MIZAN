@@ -89,17 +89,17 @@ const ArticlesPage = async ({ params, searchParams }: Props) => {
         </div>
 
         {/* Search / Filter Form */}
-        <form className="surface space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
+        <form className="surface">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1 min-w-0">
               <label htmlFor="q" className="block text-xs font-medium text-slate-500 mb-1">{dict.searchKeyword}</label>
               <input id="q" name="q" defaultValue={query} placeholder={dict.searchKeyword} className="input-shell" />
             </div>
-            <div>
+            <div className="sm:w-32">
               <label htmlFor="article" className="block text-xs font-medium text-slate-500 mb-1">{dict.searchArticleNumber}</label>
               <input id="article" name="article" defaultValue={articleNumber} placeholder={dict.searchArticleNumber} className="input-shell" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <label htmlFor="chapter" className="block text-xs font-medium text-slate-500 mb-1">{dict.allChapters}</label>
               <select id="chapter" name="chapter" defaultValue={chapter || ""} className="input-shell">
                 <option value="">{dict.allChapters}</option>
@@ -108,15 +108,15 @@ const ArticlesPage = async ({ params, searchParams }: Props) => {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="sm:w-28">
               <label htmlFor="lang" className="block text-xs font-medium text-slate-500 mb-1">{dict.languageLabel || "Language"}</label>
               <select id="lang" name="lang" defaultValue={selectedLang} className="input-shell">
                 <option value="ar">{dict.languageArabic}</option>
                 <option value="fr">{dict.languageFrench}</option>
               </select>
             </div>
+            <button className="btn-primary w-full sm:w-auto shrink-0">{dict.searchButton}</button>
           </div>
-          <button className="btn-primary w-full sm:w-auto">{dict.searchButton}</button>
         </form>
 
         {/* Results */}
@@ -135,7 +135,11 @@ const ArticlesPage = async ({ params, searchParams }: Props) => {
                   className="card hover:border-green-200 hover:shadow-md transition-all group"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <h2 className="text-base font-semibold text-slate-900 group-hover:text-green-700 transition-colors">
+                    <h2 className={`font-semibold group-hover:text-green-700 transition-colors ${
+                        article.articleNumber.length > 6 && /\d{5,}/.test(article.articleNumber)
+                          ? "text-sm text-amber-700"
+                          : "text-base text-slate-900"
+                      }`}>
                       {dict.articleLabel} {article.articleNumber}
                     </h2>
                     <div className="flex flex-wrap gap-1">
