@@ -106,27 +106,6 @@ const HomePage = async () => {
 
       <DisclaimerBanner text={dict.disclaimer} />
 
-      {/* AI Chat CTA */}
-      <section className="rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 text-white px-6 py-8 flex flex-col sm:flex-row items-center gap-6">
-        <div className="flex-1 space-y-2">
-          <h2 className="text-xl sm:text-2xl font-bold">
-            {dict.chatCtaTitle || (locale === "ar" ? "اطرح سؤالك القانوني مباشرةً" : locale === "fr" ? "Posez votre question juridique directement" : "Ask your legal question directly")}
-          </h2>
-          <p className="text-green-100 text-sm">
-            {dict.chatCtaSubtitle || (locale === "ar" ? "AI-Mizan يجيب استناداً إلى القانون المغربي الرسمي مع الإشارة إلى المواد القانونية." : locale === "fr" ? "AI-Mizan répond en citant les articles officiels du droit marocain." : "AI-Mizan answers by citing official Moroccan law articles.")}
-          </p>
-        </div>
-        <Link
-          href="/chat"
-          className="flex-shrink-0 flex items-center gap-2 rounded-xl bg-white text-green-800 font-bold px-6 py-3 text-sm hover:bg-green-50 shadow-md transition-all whitespace-nowrap"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-          {dict.navAsk || (locale === "ar" ? "ابدأ المحادثة" : locale === "fr" ? "Démarrer le chat" : "Start Chat")}
-        </Link>
-      </section>
-
       {/* Quick topics → linked to specific guides */}
       <section className="space-y-6">
         <h2 className="section-title">{dict.quickTitle}</h2>
