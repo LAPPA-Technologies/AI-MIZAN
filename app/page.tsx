@@ -34,17 +34,22 @@ const HomePage = async () => {
         <div className="relative space-y-6 lg:grid lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-8">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur-sm border border-white/20">
-              <span>⚖️</span>
+              <span>🇲🇦</span>
               <span>{dict.headerTagline || "Moroccan Law Engine"}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-              <span className="block">{dict.heroTitlePrimary}</span>
-              <span className="mt-2 block text-green-200">
-                {dict.heroTitleSecondary}
-              </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
+              {locale === "ar"
+                ? "اعرف حقوقك. مجاناً."
+                : locale === "fr"
+                ? "Connaissez vos droits. Gratuitement."
+                : "Know Your Rights. For Free."}
             </h1>
             <p className="max-w-2xl text-base sm:text-lg text-green-100/90">
-              {dict.heroSubtitle}
+              {locale === "ar"
+                ? "أدوات قانونية مغربية مجانية — احسب إرثك، راتبك، تعويضك. مبني على القانون المغربي الرسمي."
+                : locale === "fr"
+                ? "Outils juridiques marocains gratuits — calculez votre héritage, salaire, indemnité. Basé sur le droit marocain officiel."
+                : "Free Moroccan legal tools — calculate your inheritance, salary, severance. Based on official Moroccan law."}
             </p>
             <form action="/laws" className="flex flex-col sm:flex-row gap-3">
               <input
@@ -57,18 +62,17 @@ const HomePage = async () => {
               </button>
             </form>
             <div className="flex flex-wrap gap-3">
-              <Link className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-green-800 shadow-sm hover:bg-green-50 transition-colors" href="/laws">
-                {dict.heroCtaLaws}
+              <Link className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-green-800 shadow-sm hover:bg-green-50 transition-colors" href="/simulateurs/heritage">
+                {locale === "ar" ? "احسب إرثك" : locale === "fr" ? "Calculez votre héritage" : "Calculate Inheritance"}
               </Link>
-              <Link className="rounded-lg border-2 border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors" href="/simulateurs">
-                {dict.navSimulators || "Simulators"}
+              <Link className="rounded-lg border-2 border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors" href="/laws">
+                {dict.heroCtaLaws}
               </Link>
             </div>
           </div>
 
-          {/* Stats & How it works */}
+          {/* Stats */}
           <div className="space-y-4">
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-4 text-center">
                 <div className="text-2xl font-bold">{totalArticles}</div>
@@ -79,27 +83,14 @@ const HomePage = async () => {
                 <div className="text-xs text-green-200 mt-1">{dict.otherLegalCodes || "Legal Codes"}</div>
               </div>
             </div>
-
-            {/* How it works */}
-            <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-green-200">{dict.howTitle}</h2>
-              <div className="mt-4 space-y-4">
-                {[
-                  { title: dict.howStep1Title, body: dict.howStep1Body },
-                  { title: dict.howStep2Title, body: dict.howStep2Body },
-                  { title: dict.howStep3Title, body: dict.howStep3Body },
-                ].map((step, index) => (
-                  <div key={step.title} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-sm">{step.title}</p>
-                      <p className="text-xs text-green-200/80">{step.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5 text-center space-y-2">
+              <div className="text-3xl">🇲🇦</div>
+              <p className="text-sm font-semibold text-white">
+                {locale === "ar" ? "مجاني للمواطنين دائماً" : locale === "fr" ? "Gratuit pour toujours" : "Always free for citizens"}
+              </p>
+              <p className="text-xs text-green-200/80">
+                {locale === "ar" ? "لا تسجيل، لا رسوم، لا إعلانات" : locale === "fr" ? "Sans inscription, sans frais" : "No signup, no fees, no ads"}
+              </p>
             </div>
           </div>
         </div>
