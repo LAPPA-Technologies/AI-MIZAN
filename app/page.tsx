@@ -98,18 +98,34 @@ const HomePage = async () => {
 
       <DisclaimerBanner text={dict.disclaimer} />
 
-      {/* Quick topics → linked to specific guides */}
+      {/* Quick topics */}
       <section className="space-y-6">
         <h2 className="section-title">{dict.quickTitle}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: "🏠", text: dict.quickRent, href: "/guides#housing" },
-            { icon: "💼", text: dict.quickWork, href: "/guides#employment" },
-            { icon: "👨‍👩‍👧", text: dict.quickFamily, href: "/guides#family" },
-            { icon: "📊", text: locale === "ar" ? "الإرث / التركة" : locale === "fr" ? "Héritage / Succession" : "Inheritance", href: "/simulateurs/heritage" },
+            {
+              icon: "👨‍👩‍👧",
+              text: locale === "ar" ? "الأسرة والطلاق" : locale === "fr" ? "Famille et divorce" : "Family & Divorce",
+              href: "/simulateurs/divorce",
+            },
+            {
+              icon: "💼",
+              text: locale === "ar" ? "حقوق الشغل" : locale === "fr" ? "Droits du travail" : "Labor Rights",
+              href: "/simulateurs/licenciement",
+            },
+            {
+              icon: "📊",
+              text: locale === "ar" ? "الإرث والتركة" : locale === "fr" ? "Héritage et succession" : "Inheritance",
+              href: "/simulateurs/heritage",
+            },
+            {
+              icon: "🏠",
+              text: locale === "ar" ? "السكن والكراء" : locale === "fr" ? "Logement et location" : "Housing & Rent",
+              href: "/simulateurs/loyer",
+            },
           ].map((item) => (
             <Link
-              key={item.text}
+              key={item.href}
               href={item.href}
               className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-700 hover:border-green-300 hover:bg-green-50 transition-all shadow-soft"
             >
