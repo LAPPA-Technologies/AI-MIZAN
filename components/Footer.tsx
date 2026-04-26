@@ -32,7 +32,7 @@ const Footer = ({ labels }: FooterProps) => {
               <li><Link href="/laws" className="text-slate-600 hover:text-green-700 transition-colors">{labels.navLaws}</Link></li>
               <li><Link href="/guides" className="text-slate-600 hover:text-green-700 transition-colors">{labels.navGuides}</Link></li>
               <li><Link href="/updates" className="text-slate-600 hover:text-green-700 transition-colors">{labels.navUpdates}</Link></li>
-              <li><Link href="/simulators" className="text-slate-600 hover:text-green-700 transition-colors">{labels.navSimulators || 'Simulators'}</Link></li>
+              <li><Link href="/simulateurs" className="text-slate-600 hover:text-green-700 transition-colors">{labels.navSimulators || 'Simulators'}</Link></li>
               <li><Link href="/about" className="text-slate-600 hover:text-green-700 transition-colors">{labels.navAbout}</Link></li>
             </ul>
           </div>

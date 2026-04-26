@@ -9,6 +9,7 @@ const HomePage = async () => {
   const locale = await getLocale();
   const dict = getDictionary(locale);
   const updates = await prisma.lawArticle.findMany({
+    where: { code: { in: ["family_code", "labor_code"] } },
     orderBy: { updatedAt: "desc" },
     take: 3
   });
@@ -114,7 +115,7 @@ const HomePage = async () => {
             { icon: "🏠", text: dict.quickRent, href: "/guides#housing" },
             { icon: "💼", text: dict.quickWork, href: "/guides#employment" },
             { icon: "👨‍👩‍👧", text: dict.quickFamily, href: "/guides#family" },
-            { icon: "🚗", text: dict.quickAccidents, href: "/laws/penal_code/articles" },
+            { icon: "📊", text: locale === "ar" ? "الإرث / التركة" : locale === "fr" ? "Héritage / Succession" : "Inheritance", href: "/simulateurs/heritage" },
           ].map((item) => (
             <Link
               key={item.text}
