@@ -1,4 +1,5 @@
 import { getDictionary, getLocale } from "../../../lib/i18n";
+import DivorceComingSoon from "../../../components/simulators/DivorceComingSoon";
 
 export async function generateMetadata() {
   const locale = await getLocale();
@@ -10,6 +11,13 @@ export async function generateMetadata() {
 }
 
 export default async function DivorcePage() {
-  const dict = getDictionary(await getLocale());
-  return <div>{dict.simDivorceTitle} — {dict.simComingSoon}</div>;
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold text-slate-900">{dict.simDivorceTitle}</h1>
+      <DivorceComingSoon dict={dict} lang={locale} />
+    </div>
+  );
 }
