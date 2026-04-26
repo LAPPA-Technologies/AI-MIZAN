@@ -124,7 +124,7 @@ const HomePage = async () => {
       <section className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="section-title">
-            {locale === "ar" ? "أدوات قانونية مفيدة" : locale === "fr" ? "Outils juridiques utiles" : "Useful Legal Tools"}
+            {locale === "ar" ? "أدوات قانونية مجانية" : locale === "fr" ? "Outils juridiques gratuits" : "Free Legal Tools"}
           </h2>
           <Link href="/simulateurs" className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors">
             {locale === "ar" ? "جميع الأدوات" : locale === "fr" ? "Tous les outils" : "All tools"} →
@@ -134,10 +134,10 @@ const HomePage = async () => {
           {[
             {
               icon: "📊",
-              title: locale === "ar" ? "حاسبة الفرائض (الإرث)" : locale === "fr" ? "Calculateur de succession" : "Inheritance Calculator",
-              desc: locale === "ar" ? "توزيع التركة بين الورثة وفق المدونة المغربية" : locale === "fr" ? "Répartition de succession selon la Moudawana" : "Distribute estate per Moroccan Moudawana",
+              title: locale === "ar" ? "حاسبة الإرث (الفرائض)" : locale === "fr" ? "Calculateur de succession" : "Inheritance Calculator",
+              desc: locale === "ar" ? "وزع التركة وفق الشريعة والقانون المغربي" : locale === "fr" ? "Répartition selon la Moudawana" : "Distribute estate per Moroccan Moudawana",
               href: "/simulateurs/heritage",
-              badge: locale === "ar" ? "جديد" : locale === "fr" ? "Nouveau" : "New",
+              badge: locale === "ar" ? "الأكثر استخداماً" : locale === "fr" ? "Le plus utilisé" : "Most used",
             },
             {
               icon: "💰",
@@ -151,9 +151,27 @@ const HomePage = async () => {
               desc: locale === "ar" ? "احسب تعويضك حسب مدة الخدمة" : locale === "fr" ? "Calculer selon l'ancienneté" : "Calculate based on years of service",
               href: "/simulateurs/licenciement",
             },
+            {
+              icon: "🏠",
+              title: locale === "ar" ? "ضمان الإيجار" : locale === "fr" ? "Garantie de loyer" : "Rent Deposit",
+              desc: locale === "ar" ? "الحد الأقصى القانوني لضمان الإيجار" : locale === "fr" ? "Plafond légal de la caution" : "Legal maximum for rental deposit",
+              href: "/simulateurs/loyer",
+            },
+            {
+              icon: "🏛️",
+              title: locale === "ar" ? "رسوم الموثق" : locale === "fr" ? "Frais de notaire" : "Notary Fees",
+              desc: locale === "ar" ? "تقدير رسوم التوثيق والتسجيل" : locale === "fr" ? "Estimation des frais de notaire" : "Estimate notary and registration fees",
+              href: "/simulateurs/notaire",
+            },
+            {
+              icon: "💼",
+              title: locale === "ar" ? "المقاول الذاتي" : locale === "fr" ? "Auto-entrepreneur" : "Self-Employed",
+              desc: locale === "ar" ? "احسب ضرائبك كمقاول ذاتي" : locale === "fr" ? "Calculez vos cotisations auto-entrepreneur" : "Calculate your self-employed taxes",
+              href: "/simulateurs/auto-entrepreneur",
+            },
           ].map((tool) => (
             <Link
-              key={tool.title}
+              key={tool.href}
               href={tool.href}
               className="card group hover:border-green-200 hover:shadow-md transition-all flex items-start gap-3"
             >
@@ -170,6 +188,13 @@ const HomePage = async () => {
             </Link>
           ))}
         </div>
+        <p className="text-center text-sm text-slate-500">
+          {locale === "ar"
+            ? "احسب نتيجتك وشاركها مباشرة على واتساب 📲"
+            : locale === "fr"
+            ? "Calculez votre résultat et partagez-le directement sur WhatsApp 📲"
+            : "Calculate your result and share it directly on WhatsApp 📲"}
+        </p>
       </section>
 
       {/* Featured codes */}
