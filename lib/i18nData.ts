@@ -378,7 +378,25 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     // Simulator validation
     simErrorRequired: "Please enter a value",
     simErrorPositive: "Please enter a positive number",
-    simErrorInvalid: "Invalid value"
+    simErrorInvalid: "Invalid value",
+    // Simulator UI — Session 5
+    simYourResult: "Your Result",
+    simReset: "Reset",
+    simPageBadge: "Legal Simulator",
+    simLegalRefsTitle: "Legal References",
+    simReadArticle: "Art.",
+    simOpenFullPage: "Open full article",
+    simArticleLoading: "Loading article...",
+    simArticleNotFound: "Article not available in database",
+    simRelatedCalcs: "Related Calculators",
+    simHubHeroTitle: "Legal Calculators",
+    simHubHeroSubtitle: "Instant estimates based on official Moroccan law. Free, no login required.",
+    simHubTrustFooter: "Based on official Moroccan law. Always consult a licensed lawyer for your specific situation.",
+    simLoyerExplain: "Your landlord cannot legally request more than {amount} MAD as a security deposit.",
+    simSalaireExplain: "After all deductions (CNSS, AMO, IR), your estimated net salary is {amount} MAD per month.",
+    simLicenciementExplain: "Based on your salary and seniority, you are legally entitled to at least {amount} MAD in severance pay.",
+    simNotaireExplain: "The estimated total notary fees and taxes for this transaction are {amount} MAD.",
+    simAutoEntExplain: "Your estimated annual tax liability as an auto-entrepreneur is {amount} MAD."
   },
   fr: {
     navChat: "Chat",
@@ -744,7 +762,25 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     // Simulator validation
     simErrorRequired: "Veuillez saisir une valeur",
     simErrorPositive: "Veuillez saisir un nombre positif",
-    simErrorInvalid: "Valeur invalide"
+    simErrorInvalid: "Valeur invalide",
+    // Simulator UI — Session 5
+    simYourResult: "Votre résultat",
+    simReset: "Réinitialiser",
+    simPageBadge: "Simulateur juridique",
+    simLegalRefsTitle: "Références légales",
+    simReadArticle: "Art.",
+    simOpenFullPage: "Ouvrir l'article complet",
+    simArticleLoading: "Chargement de l'article...",
+    simArticleNotFound: "Article non disponible dans la base de données",
+    simRelatedCalcs: "Simulateurs associés",
+    simHubHeroTitle: "Simulateurs juridiques",
+    simHubHeroSubtitle: "Estimations instantanées basées sur le droit marocain officiel. Gratuit, sans inscription.",
+    simHubTrustFooter: "Basé sur le droit marocain officiel. Consultez toujours un avocat agréé pour votre situation spécifique.",
+    simLoyerExplain: "Votre propriétaire ne peut légalement pas demander plus de {amount} MAD de caution.",
+    simSalaireExplain: "Après toutes les déductions (CNSS, AMO, IR), votre salaire net estimé est de {amount} MAD par mois.",
+    simLicenciementExplain: "En fonction de votre salaire et de votre ancienneté, vous avez légalement droit à au moins {amount} MAD d'indemnité.",
+    simNotaireExplain: "Les frais et taxes notariaux totaux estimés pour cette transaction sont de {amount} MAD.",
+    simAutoEntExplain: "Votre charge fiscale annuelle estimée en tant qu'auto-entrepreneur est de {amount} MAD."
   },
   ar: {
     navChat: "الدردشة",
@@ -1106,6 +1142,24 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     // Simulator validation
     simErrorRequired: "يرجى إدخال قيمة",
     simErrorPositive: "يرجى إدخال رقم موجب",
-    simErrorInvalid: "قيمة غير صالحة"
+    simErrorInvalid: "قيمة غير صالحة",
+    // Simulator UI — Session 5
+    simYourResult: "نتيجتك",
+    simReset: "إعادة تعيين",
+    simPageBadge: "محاكي قانوني",
+    simLegalRefsTitle: "المراجع القانونية",
+    simReadArticle: "م.",
+    simOpenFullPage: "فتح الصفحة الكاملة",
+    simArticleLoading: "جار تحميل المادة...",
+    simArticleNotFound: "المادة غير متاحة في قاعدة البيانات",
+    simRelatedCalcs: "محاكيات ذات صلة",
+    simHubHeroTitle: "الآلات الحاسبة القانونية",
+    simHubHeroSubtitle: "تقديرات فورية مبنية على القانون المغربي الرسمي. مجانية، بدون تسجيل.",
+    simHubTrustFooter: "مبني على القانون المغربي الرسمي. استشر دائما محاميا مرخصا لحالتك الخاصة.",
+    simLoyerExplain: "لا يمكن للمالك قانونيا طلب أكثر من {amount} درهم كضمان كرائي.",
+    simSalaireExplain: "بعد جميع الاستقطاعات (CNSS وAMO والضريبة)، راتبك الصافي المقدر هو {amount} درهم شهريا.",
+    simLicenciementExplain: "بناء على راتبك وأقدميتك، يحق لك قانونيا الحصول على {amount} درهم على الأقل كتعويض.",
+    simNotaireExplain: "إجمالي الرسوم والضرائب التوثيقية المقدرة لهذه الصفقة هو {amount} درهم.",
+    simAutoEntExplain: "عبء ضريبتك السنوي المقدر بصفتك مقاولا ذاتيا هو {amount} درهم."
   }
 };
