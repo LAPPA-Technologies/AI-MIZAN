@@ -9,6 +9,12 @@ const nextConfig = {
       bodySizeLimit: "2mb"
     }
   },
+  async redirects() {
+    return [
+      { source: "/simulators", destination: "/simulateurs", permanent: false },
+      { source: "/simulators/:path*", destination: "/simulateurs/:path*", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

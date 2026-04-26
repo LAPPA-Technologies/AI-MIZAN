@@ -59,7 +59,7 @@ const HomePage = async () => {
               <Link className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-green-800 shadow-sm hover:bg-green-50 transition-colors" href="/laws">
                 {dict.heroCtaLaws}
               </Link>
-              <Link className="rounded-lg border-2 border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors" href="/simulators">
+              <Link className="rounded-lg border-2 border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors" href="/simulateurs">
                 {dict.navSimulators || "Simulators"}
               </Link>
             </div>
@@ -155,7 +155,7 @@ const HomePage = async () => {
           <h2 className="section-title">
             {locale === "ar" ? "أدوات قانونية مفيدة" : locale === "fr" ? "Outils juridiques utiles" : "Useful Legal Tools"}
           </h2>
-          <Link href="/simulators" className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors">
+          <Link href="/simulateurs" className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors">
             {locale === "ar" ? "جميع الأدوات" : locale === "fr" ? "Tous les outils" : "All tools"} →
           </Link>
         </div>
@@ -165,20 +165,20 @@ const HomePage = async () => {
               icon: "📊",
               title: locale === "ar" ? "حاسبة الفرائض (الإرث)" : locale === "fr" ? "Calculateur de succession" : "Inheritance Calculator",
               desc: locale === "ar" ? "توزيع التركة بين الورثة وفق المدونة المغربية" : locale === "fr" ? "Répartition de succession selon la Moudawana" : "Distribute estate per Moroccan Moudawana",
-              href: "/simulators",
+              href: "/simulateurs/heritage",
               badge: locale === "ar" ? "جديد" : locale === "fr" ? "Nouveau" : "New",
             },
             {
               icon: "💰",
               title: locale === "ar" ? "حاسبة الراتب الصافي" : locale === "fr" ? "Calculateur de salaire net" : "Net Salary Calculator",
               desc: locale === "ar" ? "احسب CNSS وAMO والضريبة على الدخل" : locale === "fr" ? "Calculer CNSS, AMO et IR" : "Calculate CNSS, AMO, and income tax",
-              href: "/simulators",
+              href: "/simulateurs/salaire",
             },
             {
               icon: "📋",
               title: locale === "ar" ? "تعويض الفصل التعسفي" : locale === "fr" ? "Indemnité de licenciement" : "Severance Pay",
               desc: locale === "ar" ? "احسب تعويضك حسب مدة الخدمة" : locale === "fr" ? "Calculer selon l'ancienneté" : "Calculate based on years of service",
-              href: "/simulators",
+              href: "/simulateurs/licenciement",
             },
           ].map((tool) => (
             <Link

@@ -25,7 +25,7 @@ const Header = ({ labels }: HeaderProps) => {
     { href: "/guides", label: labels.navGuides },
     { href: "/services", label: labels.navServices || "Services" },
     { href: "/updates", label: labels.navUpdates },
-    { href: "/simulators", label: labels.navSimulators || "Simulators" },
+    { href: "/simulateurs", label: labels.navSimulators || "Simulators" },
     { href: "/about", label: labels.navAbout },
   ];
 
