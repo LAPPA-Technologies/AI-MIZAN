@@ -60,7 +60,7 @@ interface HeirResult {
   blocked?: boolean;
 }
 
-function calcInheritance(inp: InheritanceInput): HeirResult[] {
+function calcInheritance(inp: InheritanceInput): { results: HeirResult[]; needsAul: boolean } {
   const hasDescendant = inp.son + inp.daughter > 0;
   const hasSon = inp.son > 0;
   const hasFather = inp.father > 0;
@@ -126,6 +126,9 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
   if (!fullSibsBlock && inp.fullSister > 0 && inp.fullBrother === 0 && !hasSon && inp.daughter === 0) {
     const sf = inp.fullSister === 1 ? frac(1, 2) : frac(2, 3);
     add("full_sister", "أخت شقيقة", "Sœur germaine", "Full Sister", inp.fullSister, sf);
+  } else if (!fullSibsBlock && inp.fullSister > 0 && inp.fullBrother === 0 && !hasSon && inp.daughter > 0) {
+    // عصبة مع الغير — sisters take the residue alongside daughters when no male عصبة exists
+    add("full_sister", "أخت شقيقة (عصبة مع الغير)", "Sœur germaine (résidu)", "Full Sister (with daughter)", inp.fullSister, frac(0, 1), false, "عصبة مع الغير");
   } else if (inp.fullSister > 0 && fullSibsBlock) {
     add("full_sister", "أخت شقيقة", "Sœur germaine", "Full Sister", inp.fullSister, frac(0, 1), true, "محجوبة");
   }
@@ -194,6 +197,23 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
     const hasDaughtersOnly = inp.daughter > 0 && !hasSon;
     if (hasDaughtersOnly && residual.n > 0) {
       residualHeirs.push({ key: "father_fixed", labelAr: "", labelFr: "", labelEn: "", count: 1, frac: residual, blocked: false });
+    }
+  } else if (!fullSibsBlock && inp.fullSister > 0 && inp.fullBrother === 0 && !hasSon && inp.daughter > 0) {
+    // عصبة مع الغير — full sisters take residue with daughters
+    residualHeirs.push({ key: "full_sister", labelAr: "", labelFr: "", labelEn: "", count: inp.fullSister, frac: residual, blocked: false });
+  }
+
+  // الرد — return unallocated residue proportionally to non-spouse heirs when no عصبة exists
+  if (!needsAul && residual.n > 0 && residualHeirs.length === 0) {
+    const spouseKeys = new Set(["husband", "wife"]);
+    const eligible = shares.filter(s => !s.blocked && s.frac.n > 0 && !spouseKeys.has(s.key));
+    if (eligible.length > 0) {
+      let totalEligibleFrac = frac(0, 1);
+      for (const e of eligible) totalEligibleFrac = addFrac(totalEligibleFrac, e.frac);
+      for (const e of eligible) {
+        const radFrac = frac(residual.n * e.frac.n * totalEligibleFrac.d, residual.d * e.frac.d * totalEligibleFrac.n);
+        residualHeirs.push({ key: e.key, labelAr: "", labelFr: "", labelEn: "", count: e.count, frac: radFrac, blocked: false });
+      }
     }
   }
 
@@ -266,7 +286,7 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
     }
   }
 
-  return results.filter(r => r.count > 0);
+  return { results: results.filter(r => r.count > 0), needsAul };
 }
 
 // ── Component ──
@@ -290,7 +310,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
   const [deceasedGender, setDeceasedGender] = useState<DeceasedGender | null>(null);
   const [estate, setEstate] = useState("");
   const [inp, setInp] = useState<Omit<InheritanceInput, "estate">>(BLANK_INP);
-  const [results, setResults] = useState<HeirResult[] | null>(null);
+  const [calcResult, setCalcResult] = useState<{ results: HeirResult[]; needsAul: boolean } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -298,7 +318,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
     debounceRef.current = setTimeout(() => {
       const estVal = parseFloat(estate);
       if (!isNaN(estVal) && estVal > 0) {
-        setResults(calcInheritance({ estate: estVal, ...inp }));
+        setCalcResult(calcInheritance({ estate: estVal, ...inp }));
       }
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
@@ -308,7 +328,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
     setDeceasedGender(g);
     // Reset spouse fields when switching gender to prevent illegal state
     setInp(prev => ({ ...prev, husband: 0, wife: 0 }));
-    setResults(null);
+    setCalcResult(null);
   }
 
   const otherHeirFields: Array<{ key: keyof typeof inp; ar: string; fr: string; en: string; max?: number }> = [
@@ -330,13 +350,13 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
     e.preventDefault();
     const estVal = parseFloat(estate);
     if (isNaN(estVal) || estVal <= 0) return;
-    setResults(calcInheritance({ estate: estVal, ...inp }));
+    setCalcResult(calcInheritance({ estate: estVal, ...inp }));
   };
 
   const hasAnyHeir = Object.values(inp).some(v => v > 0);
 
   function doReset() {
-    setResults(null);
+    setCalcResult(null);
     setEstate("");
     setDeceasedGender(null);
     setInp(BLANK_INP);
@@ -400,7 +420,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
               </label>
               <input type="number" min="1"
                 value={estate}
-                onChange={(e) => { setEstate(e.target.value); setResults(null); }}
+                onChange={(e) => { setEstate(e.target.value); setCalcResult(null); }}
                 placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
                 className="input-shell"
               />
@@ -419,7 +439,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
                   <input
                     type="number" min="0" max="4"
                     value={inp.wife || ""}
-                    onChange={(e) => { setInp(prev => ({ ...prev, wife: parseInt(e.target.value) || 0 })); setResults(null); }}
+                    onChange={(e) => { setInp(prev => ({ ...prev, wife: parseInt(e.target.value) || 0 })); setCalcResult(null); }}
                     placeholder="0"
                     className="input-shell py-2 text-center w-32"
                   />
@@ -431,7 +451,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
                   </label>
                   <button
                     type="button"
-                    onClick={() => { setInp(prev => ({ ...prev, husband: prev.husband > 0 ? 0 : 1 })); setResults(null); }}
+                    onClick={() => { setInp(prev => ({ ...prev, husband: prev.husband > 0 ? 0 : 1 })); setCalcResult(null); }}
                     className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold border-2 transition-colors ${
                       inp.husband > 0
                         ? "border-green-500 bg-green-50 text-green-800"
@@ -463,7 +483,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 0;
                         setInp(prev => ({ ...prev, [f.key]: val }));
-                        setResults(null);
+                        setCalcResult(null);
                       }}
                       placeholder="0"
                       className="input-shell py-2 text-center"
@@ -484,7 +504,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
         )}
       </form>
 
-      {results && results.length > 0 && (
+      {calcResult && calcResult.results.length > 0 && (
         <SimulatorResultCard
           title={t("توزيع الميراث", "Répartition de la succession", "Inheritance Distribution")}
           slug="heritage"
@@ -493,7 +513,16 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
           onReset={doReset}
         >
           <div className="space-y-2">
-            {results.map((r, i) => (
+            {calcResult.needsAul && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800 font-medium">
+                ⚖️ {t(
+                  "تطبيق العول: مجموع الفروض يتجاوز التركة — تُخفَّض جميع الحصص بنسبة متساوية.",
+                  "Application de l'Awl : la somme des parts dépasse 1 — toutes les quotes-parts sont réduites proportionnellement.",
+                  "Awl applied: fixed shares exceed the estate — all shares reduced proportionally."
+                )}
+              </div>
+            )}
+            {calcResult.results.map((r, i) => (
               <div
                 key={i}
                 className={`heir-row ${r.blocked ? "opacity-50 bg-red-50 border-red-100" : r.totalAmount > 0 ? "" : "opacity-60"}`}
