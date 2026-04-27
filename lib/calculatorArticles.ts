@@ -37,6 +37,11 @@ export const CALCULATOR_ARTICLES: Record<string, ArticleRef[]> = {
     { code: "labor_code", articleNumber: "1", descAr: "نطاق تطبيق مدونة الشغل", descFr: "Champ d'application du Code du Travail", descEn: "Scope of the Labour Code" },
     { code: "labor_code", articleNumber: "9", descAr: "الحرية النقابية", descFr: "Liberté syndicale", descEn: "Trade union freedom" },
   ],
+  heritage: [
+    { code: "family_code", articleNumber: "325", descAr: "مدونة الأسرة — الفروض المقدرة (1/2، 1/4، 1/8، 2/3، 1/3، 1/6)", descFr: "Moudawana — Parts fixes héréditaires (Faraid)", descEn: "Moudawana — Fixed inheritance shares (Faraid)" },
+    { code: "family_code", articleNumber: "352", descAr: "مدونة الأسرة — العول: تخفيض الحصص عند تجاوز الفروض للتركة", descFr: "Moudawana — Awl: réduction proportionnelle des parts", descEn: "Moudawana — Awl: proportional reduction when shares exceed estate" },
+    { code: "family_code", articleNumber: "369", descAr: "مدونة الأسرة — الرد: إعادة الفائض على أصحاب الفروض", descFr: "Moudawana — Radd: retour du surplus aux héritiers éligibles", descEn: "Moudawana — Radd: return of surplus to eligible heirs" },
+  ],
 };
 
 export const RELATED_CALCULATORS: Record<string, { slug: string; titleKey: string; icon: string }[]> = {
@@ -59,5 +64,9 @@ export const RELATED_CALCULATORS: Record<string, { slug: string; titleKey: strin
   "auto-entrepreneur": [
     { slug: "salaire", titleKey: "simSalaryTitle", icon: "💰" },
     { slug: "notaire", titleKey: "simNotaryTitle", icon: "🏡" },
+  ],
+  heritage: [
+    { slug: "notaire", titleKey: "simNotaryTitle", icon: "🏡" },
+    { slug: "licenciement", titleKey: "simSeveranceTitle", icon: "📋" },
   ],
 };

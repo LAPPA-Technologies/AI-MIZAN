@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import SimulatorResultCard from "./SimulatorResultCard";
 import { fmt } from "../../lib/simulatorHelpers";
+import ShareButtons from "./ShareButtons";
+import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
+import ArticleModal from "../laws/ArticleModal";
+import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
 
 // ── Fraction arithmetic for Faraid calculations ──
 type Frac = { n: number; d: number };
@@ -60,7 +63,7 @@ interface HeirResult {
   blocked?: boolean;
 }
 
-function calcInheritance(inp: InheritanceInput): HeirResult[] {
+function calcInheritance(inp: InheritanceInput): { results: HeirResult[]; needsAul: boolean; totalFixed: Frac } {
   const hasDescendant = inp.son + inp.daughter > 0;
   const hasSon = inp.son > 0;
   const hasFather = inp.father > 0;
@@ -88,11 +91,11 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
 
   if (hasMother) {
     const motherFrac = (hasDescendant || pluralSiblings) ? frac(1, 6) : frac(1, 3);
-    add("mother", "أم", "Mère", "Mother", 1, motherFrac);
+    add("mother", "أم المتوفى", "Mère", "Mother", 1, motherFrac);
   }
 
   if (hasFather) {
-    add("father_fixed", "أب (فرض)", "Père (quote-part)", "Father (fixed)", 1,
+    add("father_fixed", "أب المتوفى (فرض)", "Père (quote-part)", "Father (fixed)", 1,
       hasDescendant ? frac(1, 6) : frac(0, 1),
       false,
       hasDescendant ? undefined : "يرث بالتعصيب"
@@ -100,7 +103,7 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
   }
 
   if (hasGrandfather) {
-    add("grandfather_fixed", "جد لأب (فرض)", "Grand-père paternel", "Paternal Grandfather", 1,
+    add("grandfather_fixed", "جد المتوفى — أب الأب (فرض)", "Grand-père paternel", "Paternal Grandfather", 1,
       hasDescendant ? frac(1, 6) : frac(0, 1),
       false,
       hasDescendant ? undefined : "يرث بالتعصيب"
@@ -111,7 +114,7 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
   const matGrandmother = inp.maternalGrandmother > 0 ? 1 : 0;
   const grandmotherCount = Math.min(2, patGrandmother + matGrandmother);
   if (grandmotherCount > 0) {
-    add("grandmother", "جدة", "Grand-mère", "Grandmother", grandmotherCount,
+    add("grandmother", "جدة المتوفى", "Grand-mère", "Grandmother", grandmotherCount,
       hasGrandmother ? frac(1, 6) : frac(0, 1),
       !hasGrandmother,
       !hasGrandmother ? "محجوبة بالأم" : undefined
@@ -125,23 +128,34 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
 
   if (!fullSibsBlock && inp.fullSister > 0 && inp.fullBrother === 0 && !hasSon && inp.daughter === 0) {
     const sf = inp.fullSister === 1 ? frac(1, 2) : frac(2, 3);
-    add("full_sister", "أخت شقيقة", "Sœur germaine", "Full Sister", inp.fullSister, sf);
+    add("full_sister", "أخت شقيقة (من الأبوين)", "Sœur germaine", "Full Sister", inp.fullSister, sf);
+  } else if (!fullSibsBlock && inp.fullSister > 0 && inp.fullBrother === 0 && !hasSon && inp.daughter > 0) {
+    // عصبة مع الغير — sisters take the residue alongside daughters when no male عصبة exists
+    add("full_sister", "أخت شقيقة (من الأبوين)", "Sœur germaine (résidu)", "Full Sister (with daughter)", inp.fullSister, frac(0, 1), false, "عصبة مع الغير");
   } else if (inp.fullSister > 0 && fullSibsBlock) {
-    add("full_sister", "أخت شقيقة", "Sœur germaine", "Full Sister", inp.fullSister, frac(0, 1), true, "محجوبة");
+    add("full_sister", "أخت شقيقة (من الأبوين)", "Sœur germaine", "Full Sister", inp.fullSister, frac(0, 1), true, "محجوبة");
   }
 
   if (!halfSibsPatBlock && inp.halfSisterPat > 0 && inp.halfBrotherPat === 0) {
     const hsf = inp.halfSisterPat === 1 ? frac(1, 2) : frac(2, 3);
-    add("half_sister_pat", "أخت لأب", "Demi-sœur paternelle", "Half-Sister (pat.)", inp.halfSisterPat, hsf);
+    add("half_sister_pat", "أخت من الأب فقط", "Demi-sœur paternelle", "Half-Sister (pat.)", inp.halfSisterPat, hsf);
   } else if (inp.halfSisterPat > 0 && halfSibsPatBlock) {
-    add("half_sister_pat", "أخت لأب", "Demi-sœur paternelle", "Half-Sister (pat.)", inp.halfSisterPat, frac(0, 1), true, "محجوبة");
+    add("half_sister_pat", "أخت من الأب فقط", "Demi-sœur paternelle", "Half-Sister (pat.)", inp.halfSisterPat, frac(0, 1), true, "محجوبة");
+  }
+
+  // Blocked brothers — must be explicit so they appear in results as محجوب rows
+  if (inp.fullBrother > 0 && fullSibsBlock) {
+    add("full_brother", "أخ شقيق (من الأبوين)", "Frère germain", "Full Brother(s)", inp.fullBrother, frac(0, 1), true, "محجوب");
+  }
+  if (inp.halfBrotherPat > 0 && halfSibsPatBlock) {
+    add("half_brother_pat", "أخ من الأب فقط", "Demi-frère paternel", "Half-Brother (pat.)", inp.halfBrotherPat, frac(0, 1), true, "محجوب");
   }
 
   if (!uterineBlock && inp.uterineSibling > 0) {
     const uf = inp.uterineSibling === 1 ? frac(1, 6) : frac(1, 3);
-    add("uterine", "أخ/أخت لأم", "Frère/sœur utérin(e)", "Uterine Sibling", inp.uterineSibling, uf);
+    add("uterine", "أخ أو أخت من الأم فقط", "Frère/sœur utérin(e)", "Uterine Sibling", inp.uterineSibling, uf);
   } else if (inp.uterineSibling > 0 && uterineBlock) {
-    add("uterine", "أخ/أخت لأم", "Frère/sœur utérin(e)", "Uterine Sibling", inp.uterineSibling, frac(0, 1), true, "محجوب بالفرع/الأصل");
+    add("uterine", "أخ أو أخت من الأم فقط", "Frère/sœur utérin(e)", "Uterine Sibling", inp.uterineSibling, frac(0, 1), true, "محجوب بالفرع/الأصل");
   }
 
   let totalFixed = frac(0, 1);
@@ -156,10 +170,13 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
   const residualHeirs: typeof shares = [];
 
   if (hasSon && inp.daughter > 0) {
+    // Split residue between sons and daughters at 2:1 — compute fractions directly
+    // so perPersonAmount reflects the correct ratio, not an equal head-count split.
     const units = inp.son * 2 + inp.daughter;
-    add("son_daughter", "أبناء وبنات (تعصيب)", "Fils + Filles (résidu)", "Son(s)+Daughter(s) (residual)", inp.son + inp.daughter,
-      frac(0, 1), false, `${inp.son} ابن + ${inp.daughter} بنت (للذكر مثل حظ الأنثيين)`);
-    residualHeirs.push({ key: "son_daughter", labelAr: "", labelFr: "", labelEn: "", count: units, frac: residual, blocked: false });
+    const sonFrac = frac(residual.n * inp.son * 2, residual.d * units);
+    const dauFrac = frac(residual.n * inp.daughter, residual.d * units);
+    add("son_residual", "ابن (تعصيب)", "Fils (résidu)", "Son(s) (residual)", inp.son, sonFrac, false, "للذكر مثل حظ الأنثيين");
+    add("daughter_residual", "بنت (تعصيب)", "Fille(s) (résidu)", "Daughter(s) (residual)", inp.daughter, dauFrac, false, "للذكر مثل حظ الأنثيين");
   } else if (hasSon) {
     add("son", "ابن/أبناء", "Fils", "Son(s)", inp.son, frac(0, 1), false, "يرث بالتعصيب");
     residualHeirs.push({ key: "son", labelAr: "", labelFr: "", labelEn: "", count: inp.son, frac: residual, blocked: false });
@@ -170,11 +187,11 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
   } else if (!fullSibsBlock && inp.fullBrother > 0) {
     if (inp.fullSister > 0) {
       const units = inp.fullBrother * 2 + inp.fullSister;
-      add("full_sibling_res", "إخوة وأخوات أشقاء", "Frères/sœurs germain(e)s", "Full Siblings (residual)", inp.fullBrother + inp.fullSister,
+      add("full_sibling_res", "إخوة وأخوات أشقاء (من الأبوين)", "Frères/sœurs germain(e)s", "Full Siblings (residual)", inp.fullBrother + inp.fullSister,
         frac(0, 1), false, "للذكر مثل حظ الأنثيين");
       residualHeirs.push({ key: "full_sibling_res", labelAr: "", labelFr: "", labelEn: "", count: units, frac: residual, blocked: false });
     } else {
-      add("full_brother", "أخ شقيق", "Frère germain", "Full Brother(s)", inp.fullBrother, frac(0, 1), false, "يرث بالتعصيب");
+      add("full_brother", "أخ شقيق (من الأبوين)", "Frère germain", "Full Brother(s)", inp.fullBrother, frac(0, 1), false, "يرث بالتعصيب");
       residualHeirs.push({ key: "full_brother", labelAr: "", labelFr: "", labelEn: "", count: inp.fullBrother, frac: residual, blocked: false });
     }
   } else if (!halfSibsPatBlock && inp.halfBrotherPat > 0) {
@@ -184,13 +201,34 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
         frac(0, 1), false, "للذكر مثل حظ الأنثيين");
       residualHeirs.push({ key: "half_sib_pat_res", labelAr: "", labelFr: "", labelEn: "", count: units, frac: residual, blocked: false });
     } else {
-      add("half_brother_pat", "أخ لأب", "Demi-frère paternel", "Half-Brother (pat.)", inp.halfBrotherPat, frac(0, 1), false, "يرث بالتعصيب");
+      add("half_brother_pat", "أخ من الأب فقط", "Demi-frère paternel", "Half-Brother (pat.)", inp.halfBrotherPat, frac(0, 1), false, "يرث بالتعصيب");
       residualHeirs.push({ key: "half_brother_pat", labelAr: "", labelFr: "", labelEn: "", count: inp.halfBrotherPat, frac: residual, blocked: false });
     }
   } else if (hasFather && hasDescendant) {
     const hasDaughtersOnly = inp.daughter > 0 && !hasSon;
     if (hasDaughtersOnly && residual.n > 0) {
       residualHeirs.push({ key: "father_fixed", labelAr: "", labelFr: "", labelEn: "", count: 1, frac: residual, blocked: false });
+    }
+  } else if (!fullSibsBlock && inp.fullSister > 0 && inp.fullBrother === 0 && !hasSon && inp.daughter > 0) {
+    // عصبة مع الغير — full sisters take residue with daughters
+    residualHeirs.push({ key: "full_sister", labelAr: "", labelFr: "", labelEn: "", count: inp.fullSister, frac: residual, blocked: false });
+  }
+
+  // hasSon+daughter branch embeds the residual directly into shares without pushing to
+  // residualHeirs — so we track عصبة presence explicitly to avoid false الرد triggering.
+  const hasAsaba = residualHeirs.length > 0 || (hasSon && inp.daughter > 0);
+
+  // الرد — return unallocated residue proportionally to non-spouse heirs when no عصبة exists
+  if (!needsAul && residual.n > 0 && !hasAsaba) {
+    const spouseKeys = new Set(["husband", "wife"]);
+    const eligible = shares.filter(s => !s.blocked && s.frac.n > 0 && !spouseKeys.has(s.key));
+    if (eligible.length > 0) {
+      let totalEligibleFrac = frac(0, 1);
+      for (const e of eligible) totalEligibleFrac = addFrac(totalEligibleFrac, e.frac);
+      for (const e of eligible) {
+        const radFrac = frac(residual.n * e.frac.n * totalEligibleFrac.d, residual.d * e.frac.d * totalEligibleFrac.n);
+        residualHeirs.push({ key: e.key, labelAr: "", labelFr: "", labelEn: "", count: e.count, frac: radFrac, blocked: false });
+      }
     }
   }
 
@@ -263,179 +301,545 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
     }
   }
 
-  return results.filter(r => r.count > 0);
+  return { results: results.filter(r => r.count > 0), needsAul, totalFixed };
 }
 
 // ── Component ──
+
+type DeceasedGender = "male" | "female";
 
 interface HeritageCalculatorProps {
   dict: Record<string, string>;
   lang: string;
 }
 
+const BLANK_INP = {
+  husband: 0, wife: 0, son: 0, daughter: 0, father: 0, mother: 0,
+  paternalGrandfather: 0, paternalGrandmother: 0, maternalGrandmother: 0,
+  fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0,
+};
+
 export default function HeritageCalculator({ dict, lang }: HeritageCalculatorProps) {
   const t = (ar: string, fr: string, en: string) => lang === "ar" ? ar : lang === "fr" ? fr : en;
+  const isRtl = lang === "ar";
 
+  const [deceasedGender, setDeceasedGender] = useState<DeceasedGender | null>(null);
   const [estate, setEstate] = useState("");
-  const [inp, setInp] = useState<Omit<InheritanceInput, "estate">>({
-    husband: 0, wife: 0, son: 0, daughter: 0, father: 0, mother: 0,
-    paternalGrandfather: 0, paternalGrandmother: 0, maternalGrandmother: 0,
-    fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0,
-  });
-  const [results, setResults] = useState<HeirResult[] | null>(null);
+  const [bequest, setBequest] = useState("");
+  const [debts, setDebts] = useState("");
+  const [inp, setInp] = useState<Omit<InheritanceInput, "estate">>(BLANK_INP);
+  const [calcResult, setCalcResult] = useState<ReturnType<typeof calcInheritance> | null>(null);
+  const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
+  const [showBlocked, setShowBlocked] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const estateNum = parseFloat(estate) || 0;
+  const bequestNum = parseFloat(bequest) || 0;
+  const debtsNum = parseFloat(debts) || 0;
+  const netEstate = Math.max(0, estateNum - bequestNum - debtsNum);
+  const bequestExceedsThird = bequestNum > 0 && bequestNum > estateNum / 3;
+  const debtsExceedEstate = debtsNum > 0 && debtsNum > estateNum;
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      const estVal = parseFloat(estate);
-      if (!isNaN(estVal) && estVal > 0) {
-        setResults(calcInheritance({ estate: estVal, ...inp }));
+      if (netEstate > 0) {
+        setCalcResult(calcInheritance({ estate: netEstate, ...inp }));
+      } else {
+        setCalcResult(null);
       }
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [estate, inp]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netEstate, inp]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const heirFields: Array<{ key: keyof typeof inp; ar: string; fr: string; en: string; max?: number }> = [
-    { key: "husband", ar: "زوج", fr: "Mari", en: "Husband", max: 1 },
-    { key: "wife", ar: "زوجة / زوجات", fr: "Épouse(s)", en: "Wife / Wives", max: 4 },
-    { key: "son", ar: "ابن / أبناء", fr: "Fils", en: "Son(s)" },
-    { key: "daughter", ar: "ابنة / بنات", fr: "Fille(s)", en: "Daughter(s)" },
-    { key: "father", ar: "أب", fr: "Père", en: "Father", max: 1 },
-    { key: "mother", ar: "أم", fr: "Mère", en: "Mother", max: 1 },
-    { key: "paternalGrandfather", ar: "جد لأب", fr: "Grand-père paternel", en: "Paternal Grandfather", max: 1 },
-    { key: "paternalGrandmother", ar: "جدة لأب", fr: "Grand-mère paternelle", en: "Paternal Grandmother", max: 1 },
-    { key: "maternalGrandmother", ar: "جدة لأم", fr: "Grand-mère maternelle", en: "Maternal Grandmother", max: 1 },
-    { key: "fullBrother", ar: "أخ شقيق", fr: "Frère germain", en: "Full Brother(s)" },
-    { key: "fullSister", ar: "أخت شقيقة", fr: "Sœur germaine", en: "Full Sister(s)" },
-    { key: "halfBrotherPat", ar: "أخ لأب", fr: "Demi-frère paternel", en: "Half-Brother (pat.)" },
-    { key: "halfSisterPat", ar: "أخت لأب", fr: "Demi-sœur paternelle", en: "Half-Sister (pat.)" },
-    { key: "uterineSibling", ar: "أخ/أخت لأم", fr: "Frère/sœur utérin(e)", en: "Uterine Sibling(s)" },
+  function handleGenderSelect(g: DeceasedGender) {
+    setDeceasedGender(g);
+    setInp(prev => ({ ...prev, husband: 0, wife: 0 }));
+    setCalcResult(null);
+  }
+
+  // Heir fields grouped into logical Islamic inheritance sections
+  type HeirField = { key: keyof typeof BLANK_INP; ar: string; fr: string; en: string; max?: number };
+  const heirGroups: Array<{ sectionAr: string; sectionFr: string; sectionEn: string; rows: HeirField[][] }> = [
+    {
+      sectionAr: "الأصول", sectionFr: "Ascendants", sectionEn: "Ascendants",
+      rows: [
+        [
+          { key: "father", ar: "أب المتوفى", fr: "Père", en: "Father", max: 1 },
+          { key: "mother", ar: "أم المتوفى", fr: "Mère", en: "Mother", max: 1 },
+        ],
+        [
+          { key: "paternalGrandfather", ar: "جد المتوفى (أب الأب)", fr: "Grand-père paternel", en: "Paternal Grandfather", max: 1 },
+          { key: "paternalGrandmother", ar: "جدة المتوفى (أم الأب)", fr: "Grand-mère paternelle", en: "Paternal Grandmother", max: 1 },
+        ],
+        [
+          { key: "maternalGrandmother", ar: "جدة المتوفى (أم الأم)", fr: "Grand-mère maternelle", en: "Maternal Grandmother", max: 1 },
+        ],
+      ],
+    },
+    {
+      sectionAr: "الفروع", sectionFr: "Descendants", sectionEn: "Descendants",
+      rows: [
+        [
+          { key: "son", ar: "ابن / أبناء", fr: "Fils", en: "Son(s)" },
+          { key: "daughter", ar: "ابنة / بنات", fr: "Fille(s)", en: "Daughter(s)" },
+        ],
+      ],
+    },
+    {
+      sectionAr: "الحواشي", sectionFr: "Collatéraux", sectionEn: "Collaterals",
+      rows: [
+        [
+          { key: "fullBrother", ar: "أخ شقيق (من الأبوين)", fr: "Frère germain", en: "Full Brother(s)" },
+          { key: "fullSister", ar: "أخت شقيقة (من الأبوين)", fr: "Sœur germaine", en: "Full Sister(s)" },
+        ],
+        [
+          { key: "halfBrotherPat", ar: "أخ من الأب فقط", fr: "Demi-frère paternel", en: "Half-Brother (pat.)" },
+          { key: "halfSisterPat", ar: "أخت من الأب فقط", fr: "Demi-sœur paternelle", en: "Half-Sister (pat.)" },
+        ],
+        [
+          { key: "uterineSibling", ar: "أخ أو أخت من الأم فقط", fr: "Frère/sœur utérin(e)", en: "Uterine Sibling(s)" },
+        ],
+      ],
+    },
   ];
 
   const onCalculate = (e: React.FormEvent) => {
     e.preventDefault();
-    const estVal = parseFloat(estate);
-    if (isNaN(estVal) || estVal <= 0) return;
-    setResults(calcInheritance({ estate: estVal, ...inp }));
+    if (netEstate <= 0 || bequestExceedsThird || debtsExceedEstate) return;
+    setCalcResult(calcInheritance({ estate: netEstate, ...inp }));
   };
 
   const hasAnyHeir = Object.values(inp).some(v => v > 0);
 
+  function doReset() {
+    setCalcResult(null);
+    setEstate("");
+    setBequest("");
+    setDebts("");
+    setDeceasedGender(null);
+    setInp(BLANK_INP);
+    setShowBlocked(false);
+  }
+
   return (
-    <div className="space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-        ⚠️ {t(
-          "حاسبة تقريبية للفرائض وفق المدونة المغربية. استشر عدلاً أو محامياً للمواقف المعقدة.",
-          "Calculateur approximatif de successions selon la Moudawana. Consultez un notaire/avocat pour les cas complexes.",
-          "Approximate inheritance calculator per Moroccan Moudawana. Consult a notary/lawyer for complex cases."
-        )}
-      </div>
+    <div className="space-y-5" dir={isRtl ? "rtl" : "ltr"}>
 
-      <form onSubmit={onCalculate} className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-slate-800 mb-1">
-            {t("قيمة التركة الصافية (درهم)", "Valeur nette de la succession (MAD)", "Net Estate Value (MAD)")}
-          </label>
-          <input type="number" min="1"
-            value={estate}
-            onChange={(e) => { setEstate(e.target.value); setResults(null); }}
-            placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
-            className="input-shell"
-          />
-        </div>
+      {/* Zone 2: Input Card */}
+      <form onSubmit={onCalculate} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
 
+        {/* Gender selector — legally critical, must stay at top */}
         <div>
-          <p className="text-sm font-semibold text-slate-800 mb-3">
-            {t("الورثة (أدخل الأعداد)", "Héritiers (saisir les effectifs)", "Heirs (enter counts)")}
+          <p className="text-sm font-semibold text-slate-700 mb-3">
+            {t("من المتوفى؟", "Qui est le défunt ?", "Who passed away?")}
+            <span className="ms-1.5 text-red-500">*</span>
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {heirFields.map((f) => (
-              <div key={f.key} className="space-y-1">
-                <label className="block text-xs font-medium text-slate-600">
-                  {t(f.ar, f.fr, f.en)}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max={f.max ?? 20}
-                  value={inp[f.key] || ""}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    setInp(prev => ({ ...prev, [f.key]: val }));
-                    setResults(null);
-                  }}
-                  placeholder="0"
-                  className="input-shell py-2 text-center"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            {(["male", "female"] as DeceasedGender[]).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => handleGenderSelect(g)}
+                className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-semibold text-sm transition-all ${
+                  deceasedGender === g
+                    ? "border-green-500 bg-green-50 text-green-800 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                }`}
+              >
+                <span className="text-2xl">{g === "male" ? "👨" : "👩"}</span>
+                <span>{g === "male" ? t("رجل", "Homme", "Man") : t("امرأة", "Femme", "Woman")}</span>
+              </button>
             ))}
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={!estate || !hasAnyHeir}
-          className="btn-primary w-full py-3 text-base"
-        >
-          {t("احسب التركة", "Calculer la succession", "Calculate Inheritance")}
-        </button>
+        {!deceasedGender ? (
+          <p className="text-sm text-slate-400 text-center py-5 border border-dashed border-slate-200 rounded-xl">
+            {t("اختر أولاً من المتوفى", "Choisissez d'abord le défunt", "Select who passed away first")}
+          </p>
+        ) : (
+          <>
+            {/* Estate value */}
+            <div className="space-y-1">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                {t("قيمة التركة الصافية (درهم)", "Valeur nette de la succession (MAD)", "Net Estate Value (MAD)")}
+              </label>
+              <input type="number" min="1"
+                value={estate}
+                onChange={(e) => { setEstate(e.target.value); setCalcResult(null); }}
+                placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
+                className="input-shell w-full"
+              />
+              <p className="text-xs text-slate-400 leading-relaxed pt-1">
+                {t(
+                  "بعد خصم: مصاريف الجنازة، الديون، والوصية (الوصية لا تتجاوز ثلث التركة لغير الوارث)",
+                  "Après déduction : frais funéraires, dettes, legs (le legs ne dépasse pas 1/3 pour un non-héritier)",
+                  "After deducting: funeral costs, debts, bequest (bequest max 1/3 for non-heirs)"
+                )}
+              </p>
+              <p className="text-xs text-slate-300">
+                {t("وفق الآية الكريمة (النساء: 11) ومدونة الأسرة المادة 322", "Selon (An-Nisa: 11) et Art. 322 Moudawana", "Per (An-Nisa: 11) and Moudawana Art. 322")}
+              </p>
+            </div>
+
+            {/* Debts (optional) */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-slate-600">
+                {t("الديون المستحقة (اختياري)", "Dettes (facultatif)", "Debts (optional)")}
+              </label>
+              <input type="number" min="0"
+                value={debts}
+                onChange={(e) => { setDebts(e.target.value); setCalcResult(null); }}
+                placeholder="0"
+                className="input-shell w-full"
+              />
+              <p className="text-xs text-slate-400">
+                {t("تُخصم كاملاً قبل توزيع الإرث", "Déduites intégralement avant la répartition", "Deducted in full before distribution")}
+              </p>
+              {debtsExceedEstate && (
+                <p className="text-xs text-red-600 font-medium">
+                  ⚠️ {t("الديون تتجاوز قيمة التركة", "Les dettes dépassent la valeur de la succession", "Debts exceed the estate value")}
+                </p>
+              )}
+            </div>
+
+            {/* Bequest (optional) */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-slate-600">
+                {t("الوصية (اختياري)", "Legs/testament (facultatif)", "Bequest (optional)")}
+              </label>
+              <input type="number" min="0"
+                value={bequest}
+                onChange={(e) => { setBequest(e.target.value); setCalcResult(null); }}
+                placeholder="0"
+                className="input-shell w-full"
+              />
+              <p className="text-xs text-slate-400">
+                {t("للغير — لا تتجاوز ثلث التركة", "Pour un tiers — max 1/3 de la succession", "For non-heirs — max 1/3 of estate")}
+              </p>
+              {bequestExceedsThird && (
+                <p className="text-xs text-red-600 font-medium">
+                  ⚠️ {t("الوصية تتجاوز الثلث المسموح به شرعاً وقانوناً", "Le legs dépasse le tiers légal (islamique et légal)", "Bequest exceeds the legally permitted one-third")}
+                </p>
+              )}
+            </div>
+
+            {/* ── Section A: الزوجية ── */}
+            <div>
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide border-b border-green-100 pb-1 mb-3">
+                {t("الزوجية", "Conjoint(e)", "Spouse")}
+              </p>
+              {deceasedGender === "male" ? (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-slate-500">
+                    {t("عدد الزوجات (الحد الأقصى 4)", "Nombre d'épouses (max 4)", "Number of wives (max 4)")}
+                  </label>
+                  <input
+                    type="number" min="0" max="4"
+                    value={inp.wife || ""}
+                    onChange={(e) => { setInp(prev => ({ ...prev, wife: parseInt(e.target.value) || 0 })); setCalcResult(null); }}
+                    placeholder="0"
+                    className="input-shell py-2 text-center w-28"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-slate-500">
+                    {t("هل تركت زوجاً؟", "A-t-elle laissé un mari ?", "Did she leave a husband?")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setInp(prev => ({ ...prev, husband: prev.husband > 0 ? 0 : 1 })); setCalcResult(null); }}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold border-2 transition-colors ${
+                      inp.husband > 0
+                        ? "border-green-500 bg-green-50 text-green-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {inp.husband > 0 ? t("نعم", "Oui", "Yes") : t("لا", "Non", "No")}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* ── Sections B, C, D: Grouped heir fields ── */}
+            <div>
+              <p className="text-sm text-slate-500 italic mb-3">
+                {t("جميع الورثة التالية بالنسبة للمتوفى/المتوفاة", "Tous les héritiers suivants par rapport au défunt(e)", "All heirs below relative to the deceased")}
+              </p>
+              <div className="space-y-5">
+                {heirGroups.map((group) => (
+                  <div key={group.sectionAr}>
+                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide border-b border-green-100 pb-1 mb-3">
+                      {t(group.sectionAr, group.sectionFr, group.sectionEn)}
+                    </p>
+                    <div className="space-y-3">
+                      {group.rows.map((row, ri) => (
+                        <div key={ri} className={`grid gap-3 ${row.length === 2 ? "grid-cols-2" : "grid-cols-1 max-w-[calc(50%-6px)]"}`}>
+                          {row.map((f) => (
+                            <div key={f.key} className="space-y-1">
+                              <label className="block text-xs font-medium text-slate-500">
+                                {t(f.ar, f.fr, f.en)}
+                              </label>
+                              <input
+                                type="number" min="0" max={f.max ?? 20}
+                                value={inp[f.key] || ""}
+                                onChange={(e) => {
+                                  setInp(prev => ({ ...prev, [f.key]: parseInt(e.target.value) || 0 }));
+                                  setCalcResult(null);
+                                }}
+                                placeholder="0"
+                                className="input-shell py-2 text-center"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!estate || !hasAnyHeir}
+              className="btn-primary w-full py-3 text-base"
+            >
+              {t("احسب التركة", "Calculer la succession", "Calculate Inheritance")}
+            </button>
+          </>
+        )}
       </form>
 
-      {results && results.length > 0 && (
-        <SimulatorResultCard
-          title={t("توزيع الميراث", "Répartition de la succession", "Inheritance Distribution")}
-          slug="heritage"
-          lang={lang}
-          dict={dict}
-          onReset={() => {
-            setResults(null);
-            setEstate("");
-            setInp({ husband: 0, wife: 0, son: 0, daughter: 0, father: 0, mother: 0,
-              paternalGrandfather: 0, paternalGrandmother: 0, maternalGrandmother: 0,
-              fullBrother: 0, fullSister: 0, halfBrotherPat: 0, halfSisterPat: 0, uterineSibling: 0 });
-          }}
-        >
-          <div className="space-y-2">
-            {results.map((r, i) => (
-              <div
-                key={i}
-                className={`heir-row ${r.blocked ? "opacity-50 bg-red-50 border-red-100" : r.totalAmount > 0 ? "" : "opacity-60"}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {t(r.labelAr, r.labelFr, r.labelEn)}
-                    {r.count > 1 && <span className="text-slate-500 font-normal"> ×{r.count}</span>}
+      {/* Zone 3: Result Card */}
+      {calcResult && calcResult.results.length > 0 && (() => {
+        const activeResults = calcResult.results
+          .filter(r => !r.blocked)
+          .sort((a, b) => b.totalAmount - a.totalAmount);
+        const blockedResults = calcResult.results.filter(r => r.blocked);
+        const totalActive = activeResults.reduce((sum, r) => sum + r.totalAmount, 0);
+        const isBalanced = Math.abs(totalActive - netEstate) <= 1;
+
+        return (
+          <div style={{ animation: "simSlideUp 0.3s ease forwards" }}>
+            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-green-700">
+                  {t("توزيع الميراث", "Répartition de la succession", "Inheritance Distribution")}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {t(`إجمالي التركة: ${fmt(netEstate)} MAD`, `Succession nette : ${fmt(netEstate)} MAD`, `Net estate: ${fmt(netEstate)} MAD`)}
+                </p>
+              </div>
+
+              {/* العول banner — shown only when Awl is applied */}
+              {calcResult.needsAul && (
+                <div className="rounded-xl bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold mb-1">
+                    ⚖️ {t("تم تطبيق العول", "Application de l'Awl", "Awl (proportional reduction) applied")}
                   </p>
-                  {r.note && <p className="text-xs text-slate-500">{r.note}</p>}
-                  {r.blocked && <p className="text-xs text-red-600">{t("محجوب/ة", "Exclu(e)", "Excluded")}</p>}
+                  <p className="text-xs leading-relaxed">
+                    {t(
+                      `مجموع الفروض المقدرة (${fracStr(calcResult.totalFixed)}) يتجاوز التركة. تُخفَّض جميع الحصص بنسبة متساوية وفق الفصل 352 من مدونة الأسرة.`,
+                      `La somme des parts fixes (${fracStr(calcResult.totalFixed)}) dépasse la succession. Toutes les parts sont réduites proportionnellement (Art. 352 Moudawana).`,
+                      `Sum of fixed shares (${fracStr(calcResult.totalFixed)}) exceeds the estate. All shares are reduced proportionally (Moudawana Art. 352).`
+                    )}
+                  </p>
                 </div>
-                <div className="text-right shrink-0">
-                  {!r.blocked && r.totalAmount > 0 ? (
-                    <>
-                      <p className="heir-share">{fracStr(r.shareFrac)} = {fmt(r.totalAmount)} MAD</p>
-                      {r.count > 1 && (
-                        <p className="heir-amount">
-                          {t("للفرد", "/ personne", "/ person")}: {fmt(r.perPersonAmount)} MAD
+              )}
+
+              {/* Deduction breakdown — shown when debts or bequest entered */}
+              {(debtsNum > 0 || bequestNum > 0) && (
+                <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm space-y-1">
+                  <div className="flex justify-between text-slate-600">
+                    <span>{t("إجمالي التركة المُدخلة", "Succession brute", "Gross estate")}</span>
+                    <span className="font-medium">{fmt(estateNum)} MAD</span>
+                  </div>
+                  {debtsNum > 0 && (
+                    <div className="flex justify-between text-red-600">
+                      <span>(-) {t("الديون", "Dettes", "Debts")}</span>
+                      <span className="font-medium">{fmt(debtsNum)} MAD</span>
+                    </div>
+                  )}
+                  {bequestNum > 0 && (
+                    <div className="flex justify-between text-amber-700">
+                      <span>(-) {t("الوصية", "Legs", "Bequest")}</span>
+                      <span className="font-medium">{fmt(bequestNum)} MAD</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-green-800 font-semibold border-t border-slate-200 pt-1 mt-1">
+                    <span>= {t("صافي التركة للتوزيع", "Net à distribuer", "Net estate for distribution")}</span>
+                    <span>{fmt(netEstate)} MAD</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Active heir rows — sorted by amount descending */}
+              <div className="space-y-2 bg-white rounded-xl px-4 py-3 border border-green-100">
+                {activeResults.map((r, i) => (
+                  <div key={i} className="heir-row">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {t(r.labelAr, r.labelFr, r.labelEn)}
+                          {r.count > 1 && <span className="font-normal"> ×{r.count}</span>}
+                        </p>
+                      </div>
+                      {r.note && (
+                        <p className={`text-xs mt-0.5 ${r.note === "للذكر مثل حظ الأنثيين" ? "text-green-700 font-medium" : "text-slate-400"}`}>
+                          {r.note}
                         </p>
                       )}
-                    </>
-                  ) : (
-                    <span className="text-xs text-slate-400">{t("لا يرث", "Exclu", "No share")}</span>
-                  )}
+                    </div>
+                    <div className={`text-right shrink-0 ${isRtl ? "text-left" : ""}`}>
+                      {r.totalAmount > 0 ? (
+                        <>
+                          <p className="text-sm font-bold text-slate-800">
+                            {fracStr(r.shareFrac)} = <span className="text-green-700">{fmt(r.totalAmount)} MAD</span>
+                          </p>
+                          {r.count > 1 && (
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {t("للفرد", "/ pers.", "/ person")}: {fmt(r.perPersonAmount)} MAD
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-300">{t("لا يرث", "Exclu", "No share")}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Total verification line */}
+                <div className={`flex justify-between pt-2 mt-1 border-t ${isBalanced ? "border-green-200" : "border-amber-200"}`}>
+                  <span className={`text-xs font-semibold ${isBalanced ? "text-green-700" : "text-amber-700"}`}>
+                    {t("المجموع", "Total", "Total")} {isBalanced ? "✓" : "≈"}
+                  </span>
+                  <span className={`text-xs font-semibold ${isBalanced ? "text-green-700" : "text-amber-700"}`}>
+                    {fmt(totalActive)} MAD
+                  </span>
                 </div>
               </div>
-            ))}
-            <p className="text-xs text-slate-400 border-t border-slate-100 pt-3">
-              {t(
-                "المراجع: مدونة الأسرة المغربية، المواد 325-393 | القانون المغربي للإرث (الفرائض)",
-                "Réf. : Moudawana marocaine Art. 325-393 | Loi marocaine des successions",
-                "Ref: Moroccan Moudawana Art. 325-393 | Moroccan Inheritance Law (Faraid)"
+
+              {/* Blocked heirs — collapsible */}
+              {blockedResults.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBlocked(v => !v)}
+                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"
+                  >
+                    <span>{showBlocked ? "▲" : "▼"}</span>
+                    <span>
+                      {t(
+                        `الورثة المحجوبون (${blockedResults.length})`,
+                        `Héritiers exclus (${blockedResults.length})`,
+                        `Blocked heirs (${blockedResults.length})`
+                      )}
+                    </span>
+                  </button>
+                  {showBlocked && (
+                    <div className="mt-2 space-y-2 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                      {blockedResults.map((r, i) => (
+                        <div key={i} className="heir-row bg-slate-50 rounded-lg px-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-semibold text-slate-400">
+                                {t(r.labelAr, r.labelFr, r.labelEn)}
+                                {r.count > 1 && <span className="font-normal"> ×{r.count}</span>}
+                              </p>
+                              <span className="text-xs bg-red-50 text-red-400 border border-red-100 rounded-full px-2 py-0.5 shrink-0">
+                                {t("محجوب", "Exclu", "Blocked")}
+                              </span>
+                            </div>
+                            {r.note && (
+                              <p className="text-xs text-slate-400 mt-0.5">{r.note}</p>
+                            )}
+                          </div>
+                          <div className={`text-right shrink-0 ${isRtl ? "text-left" : ""}`}>
+                            <span className="text-xs text-slate-300">0 MAD</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
-            </p>
+
+              {/* Legal reference note */}
+              <p className="text-xs text-slate-400">
+                {t(
+                  "المراجع: مدونة الأسرة المغربية، المواد 321-395 (الفرائض)",
+                  "Réf. : Moudawana marocaine Art. 321-395 (successions)",
+                  "Ref: Moroccan Moudawana Art. 321-395 (Faraid)"
+                )}
+              </p>
+
+              {/* Heritage-specific strong disclaimer */}
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-900 leading-relaxed">
+                ⚠️ {t(
+                  "حساب الإرث من أعقد المسائل القانونية. هذه النتيجة تقديرية للتوجيه فقط. استشر عدلاً أو محامياً متخصصاً لتوثيق توزيع التركة رسمياً.",
+                  "Le calcul successoral est l'une des questions juridiques les plus complexes. Ce résultat est indicatif seulement. Consultez un notaire ou avocat spécialisé pour la documentation officielle.",
+                  "Inheritance calculation is among the most complex legal matters. This result is indicative only. Consult a specialist notary or lawyer for official estate distribution."
+                )}
+              </div>
+
+              {/* Share buttons */}
+              <ShareButtons
+                title={t("حاسبة الميراث", "Calculateur de succession", "Inheritance Calculator")}
+                slug="heritage"
+                dict={dict}
+              />
+
+              <button
+                type="button"
+                onClick={doReset}
+                className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                ↺ {dict.simReset || "Reset"}
+              </button>
+            </div>
+
+            {/* Zone 4: Articles Strip */}
+            <CalculatorArticlesStrip
+              articles={CALCULATOR_ARTICLES.heritage}
+              lang={lang}
+              dict={dict}
+              onArticleClick={setModalArticle}
+            />
+
+            {/* Zone 5: Related Calculators */}
+            <div className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+                {dict.simRelatedCalcs || "Related Calculators"}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {RELATED_CALCULATORS.heritage.map((rel) => (
+                  <a
+                    key={rel.slug}
+                    href={`/simulateurs/${rel.slug}`}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-colors shadow-sm"
+                  >
+                    <span>{rel.icon}</span>
+                    <span>{dict[rel.titleKey] || rel.titleKey}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
-        </SimulatorResultCard>
-      )}
+        );
+      })()}
+
+      {/* Article Modal */}
+      <ArticleModal articleRef={modalArticle} lang={lang} dict={dict} onClose={() => setModalArticle(null)} />
+
+      <style jsx global>{`
+        @keyframes simSlideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
