@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import SimulatorResultCard from "./SimulatorResultCard";
 import { fmt } from "../../lib/simulatorHelpers";
+import ShareButtons from "./ShareButtons";
+import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
+import ArticleModal from "../laws/ArticleModal";
+import { CALCULATOR_ARTICLES, RELATED_CALCULATORS, type ArticleRef } from "../../lib/calculatorArticles";
 
 // ── Fraction arithmetic for Faraid calculations ──
 type Frac = { n: number; d: number };
@@ -60,7 +63,7 @@ interface HeirResult {
   blocked?: boolean;
 }
 
-function calcInheritance(inp: InheritanceInput): { results: HeirResult[]; needsAul: boolean } {
+function calcInheritance(inp: InheritanceInput): { results: HeirResult[]; needsAul: boolean; totalFixed: Frac } {
   const hasDescendant = inp.son + inp.daughter > 0;
   const hasSon = inp.son > 0;
   const hasFather = inp.father > 0;
@@ -286,7 +289,7 @@ function calcInheritance(inp: InheritanceInput): { results: HeirResult[]; needsA
     }
   }
 
-  return { results: results.filter(r => r.count > 0), needsAul };
+  return { results: results.filter(r => r.count > 0), needsAul, totalFixed };
 }
 
 // ── Component ──
@@ -306,11 +309,13 @@ const BLANK_INP = {
 
 export default function HeritageCalculator({ dict, lang }: HeritageCalculatorProps) {
   const t = (ar: string, fr: string, en: string) => lang === "ar" ? ar : lang === "fr" ? fr : en;
+  const isRtl = lang === "ar";
 
   const [deceasedGender, setDeceasedGender] = useState<DeceasedGender | null>(null);
   const [estate, setEstate] = useState("");
   const [inp, setInp] = useState<Omit<InheritanceInput, "estate">>(BLANK_INP);
-  const [calcResult, setCalcResult] = useState<{ results: HeirResult[]; needsAul: boolean } | null>(null);
+  const [calcResult, setCalcResult] = useState<ReturnType<typeof calcInheritance> | null>(null);
+  const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -326,7 +331,6 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
 
   function handleGenderSelect(g: DeceasedGender) {
     setDeceasedGender(g);
-    // Reset spouse fields when switching gender to prevent illegal state
     setInp(prev => ({ ...prev, husband: 0, wife: 0 }));
     setCalcResult(null);
   }
@@ -363,50 +367,36 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
   }
 
   return (
-    <div className="space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-        ⚠️ {t(
-          "حاسبة تقريبية للفرائض وفق المدونة المغربية. استشر عدلاً أو محامياً للمواقف المعقدة.",
-          "Calculateur approximatif de successions selon la Moudawana. Consultez un notaire/avocat pour les cas complexes.",
-          "Approximate inheritance calculator per Moroccan Moudawana. Consult a notary/lawyer for complex cases."
-        )}
-      </div>
+    <div className="space-y-5" dir={isRtl ? "rtl" : "ltr"}>
 
-      <form onSubmit={onCalculate} className="space-y-4">
-        {/* Gender selector — must be first */}
+      {/* Zone 2: Input Card */}
+      <form onSubmit={onCalculate} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+
+        {/* Gender selector — legally critical, must stay at top */}
         <div>
-          <p className="text-sm font-semibold text-slate-800 mb-3">
+          <p className="text-sm font-semibold text-slate-700 mb-3">
             {t("من المتوفى؟", "Qui est le défunt ?", "Who passed away?")}
+            <span className="ms-1.5 text-red-500">*</span>
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleGenderSelect("male")}
-              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-semibold text-sm transition-all ${
-                deceasedGender === "male"
-                  ? "border-green-500 bg-green-50 text-green-800"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-              }`}
-            >
-              <span className="text-3xl" role="img" aria-label="male">👤</span>
-              <span>{t("رجل", "Homme", "Man")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleGenderSelect("female")}
-              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-semibold text-sm transition-all ${
-                deceasedGender === "female"
-                  ? "border-green-500 bg-green-50 text-green-800"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-              }`}
-            >
-              <span className="text-3xl" role="img" aria-label="female">👤</span>
-              <span>{t("امرأة", "Femme", "Woman")}</span>
-            </button>
+            {(["male", "female"] as DeceasedGender[]).map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => handleGenderSelect(g)}
+                className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-5 font-semibold text-sm transition-all ${
+                  deceasedGender === g
+                    ? "border-green-500 bg-green-50 text-green-800 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                }`}
+              >
+                <span className="text-2xl">{g === "male" ? "👨" : "👩"}</span>
+                <span>{g === "male" ? t("رجل", "Homme", "Man") : t("امرأة", "Femme", "Woman")}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Gate all other fields behind gender selection */}
         {!deceasedGender ? (
           <p className="text-sm text-slate-400 text-center py-5 border border-dashed border-slate-200 rounded-xl">
             {t("اختر أولاً من المتوفى", "Choisissez d'abord le défunt", "Select who passed away first")}
@@ -415,44 +405,44 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
           <>
             {/* Estate value */}
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 {t("قيمة التركة الصافية (درهم)", "Valeur nette de la succession (MAD)", "Net Estate Value (MAD)")}
               </label>
               <input type="number" min="1"
                 value={estate}
                 onChange={(e) => { setEstate(e.target.value); setCalcResult(null); }}
                 placeholder={t("مثال: 500000", "ex: 500000", "e.g. 500000")}
-                className="input-shell"
+                className="input-shell w-full"
               />
             </div>
 
-            {/* Spouse field — gender-conditional */}
+            {/* Spouse — gender-conditional */}
             <div>
-              <p className="text-sm font-semibold text-slate-800 mb-3">
+              <p className="text-sm font-semibold text-slate-700 mb-2">
                 {t("الزوج / الزوجة", "Conjoint(e)", "Spouse")}
               </p>
               {deceasedGender === "male" ? (
                 <div className="space-y-1">
-                  <label className="block text-xs font-medium text-slate-600">
-                    {t("عدد الزوجات (حتى 4)", "Nombre d'épouses (max 4)", "Number of wives (max 4)")}
+                  <label className="block text-xs font-medium text-slate-500">
+                    {t("عدد الزوجات (الحد الأقصى 4)", "Nombre d'épouses (max 4)", "Number of wives (max 4)")}
                   </label>
                   <input
                     type="number" min="0" max="4"
                     value={inp.wife || ""}
                     onChange={(e) => { setInp(prev => ({ ...prev, wife: parseInt(e.target.value) || 0 })); setCalcResult(null); }}
                     placeholder="0"
-                    className="input-shell py-2 text-center w-32"
+                    className="input-shell py-2 text-center w-28"
                   />
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <label className="text-xs font-medium text-slate-600">
+                  <span className="text-xs font-medium text-slate-500">
                     {t("هل تركت زوجاً؟", "A-t-elle laissé un mari ?", "Did she leave a husband?")}
-                  </label>
+                  </span>
                   <button
                     type="button"
                     onClick={() => { setInp(prev => ({ ...prev, husband: prev.husband > 0 ? 0 : 1 })); setCalcResult(null); }}
-                    className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold border-2 transition-colors ${
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold border-2 transition-colors ${
                       inp.husband > 0
                         ? "border-green-500 bg-green-50 text-green-800"
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
@@ -464,25 +454,22 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
               )}
             </div>
 
-            {/* Other heirs */}
+            {/* Other heirs grid */}
             <div>
-              <p className="text-sm font-semibold text-slate-800 mb-3">
+              <p className="text-sm font-semibold text-slate-700 mb-3">
                 {t("باقي الورثة", "Autres héritiers", "Other heirs")}
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {otherHeirFields.map((f) => (
                   <div key={f.key} className="space-y-1">
-                    <label className="block text-xs font-medium text-slate-600">
+                    <label className="block text-xs font-medium text-slate-500">
                       {t(f.ar, f.fr, f.en)}
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      max={f.max ?? 20}
+                      type="number" min="0" max={f.max ?? 20}
                       value={inp[f.key] || ""}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value) || 0;
-                        setInp(prev => ({ ...prev, [f.key]: val }));
+                        setInp(prev => ({ ...prev, [f.key]: parseInt(e.target.value) || 0 }));
                         setCalcResult(null);
                       }}
                       placeholder="0"
@@ -504,63 +491,141 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
         )}
       </form>
 
+      {/* Zone 3: Result Card */}
       {calcResult && calcResult.results.length > 0 && (
-        <SimulatorResultCard
-          title={t("توزيع الميراث", "Répartition de la succession", "Inheritance Distribution")}
-          slug="heritage"
-          lang={lang}
-          dict={dict}
-          onReset={doReset}
-        >
-          <div className="space-y-2">
+        <div style={{ animation: "simSlideUp 0.3s ease forwards" }}>
+          <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6 space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-green-700">
+              {t("توزيع الميراث", "Répartition de la succession", "Inheritance Distribution")}
+            </p>
+
+            {/* العول banner — shown only when Awl is applied */}
             {calcResult.needsAul && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800 font-medium">
-                ⚖️ {t(
-                  "تطبيق العول: مجموع الفروض يتجاوز التركة — تُخفَّض جميع الحصص بنسبة متساوية.",
-                  "Application de l'Awl : la somme des parts dépasse 1 — toutes les quotes-parts sont réduites proportionnellement.",
-                  "Awl applied: fixed shares exceed the estate — all shares reduced proportionally."
-                )}
+              <div className="rounded-xl bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900">
+                <p className="font-semibold mb-1">
+                  ⚖️ {t("تم تطبيق العول", "Application de l'Awl", "Awl (proportional reduction) applied")}
+                </p>
+                <p className="text-xs leading-relaxed">
+                  {t(
+                    `مجموع الفروض المقدرة (${fracStr(calcResult.totalFixed)}) يتجاوز التركة. تُخفَّض جميع الحصص بنسبة متساوية وفق الفصل 352 من مدونة الأسرة.`,
+                    `La somme des parts fixes (${fracStr(calcResult.totalFixed)}) dépasse la succession. Toutes les parts sont réduites proportionnellement (Art. 352 Moudawana).`,
+                    `Sum of fixed shares (${fracStr(calcResult.totalFixed)}) exceeds the estate. All shares are reduced proportionally (Moudawana Art. 352).`
+                  )}
+                </p>
               </div>
             )}
-            {calcResult.results.map((r, i) => (
-              <div
-                key={i}
-                className={`heir-row ${r.blocked ? "opacity-50 bg-red-50 border-red-100" : r.totalAmount > 0 ? "" : "opacity-60"}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {t(r.labelAr, r.labelFr, r.labelEn)}
-                    {r.count > 1 && <span className="text-slate-500 font-normal"> ×{r.count}</span>}
-                  </p>
-                  {r.note && <p className="text-xs text-slate-500">{r.note}</p>}
-                  {r.blocked && <p className="text-xs text-red-600">{t("محجوب/ة", "Exclu(e)", "Excluded")}</p>}
-                </div>
-                <div className="text-right shrink-0">
-                  {!r.blocked && r.totalAmount > 0 ? (
-                    <>
-                      <p className="heir-share">{fracStr(r.shareFrac)} = {fmt(r.totalAmount)} MAD</p>
-                      {r.count > 1 && (
-                        <p className="heir-amount">
-                          {t("للفرد", "/ personne", "/ person")}: {fmt(r.perPersonAmount)} MAD
+
+            {/* Heir rows */}
+            <div className="space-y-2 bg-white rounded-xl px-4 py-3 border border-green-100">
+              {calcResult.results.map((r, i) => (
+                <div
+                  key={i}
+                  className={`heir-row ${r.blocked ? "opacity-50" : ""}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${r.blocked ? "text-slate-400" : "text-slate-900"}`}>
+                      {t(r.labelAr, r.labelFr, r.labelEn)}
+                      {r.count > 1 && <span className="text-slate-400 font-normal"> ×{r.count}</span>}
+                    </p>
+                    {r.note && (
+                      <p className={`text-xs mt-0.5 ${r.note === "للذكر مثل حظ الأنثيين" ? "text-green-700 font-medium" : "text-slate-400"}`}>
+                        {r.note}
+                      </p>
+                    )}
+                    {r.blocked && <p className="text-xs text-red-500 mt-0.5">{t("محجوب/ة", "Exclu(e)", "Excluded")}</p>}
+                  </div>
+                  <div className={`text-right shrink-0 ${isRtl ? "text-left" : ""}`}>
+                    {!r.blocked && r.totalAmount > 0 ? (
+                      <>
+                        <p className="text-sm font-bold text-slate-800">
+                          {fracStr(r.shareFrac)} = <span className="text-green-700">{fmt(r.totalAmount)} MAD</span>
                         </p>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-xs text-slate-400">{t("لا يرث", "Exclu", "No share")}</span>
-                  )}
+                        {r.count > 1 && (
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            {t("للفرد", "/ pers.", "/ person")}: {fmt(r.perPersonAmount)} MAD
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-xs text-slate-300">{t("لا يرث", "Exclu", "No share")}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            <p className="text-xs text-slate-400 border-t border-slate-100 pt-3">
+              ))}
+            </div>
+
+            {/* Legal reference note */}
+            <p className="text-xs text-slate-400">
               {t(
-                "المراجع: مدونة الأسرة المغربية، المواد 325-393 | القانون المغربي للإرث (الفرائض)",
-                "Réf. : Moudawana marocaine Art. 325-393 | Loi marocaine des successions",
-                "Ref: Moroccan Moudawana Art. 325-393 | Moroccan Inheritance Law (Faraid)"
+                "المراجع: مدونة الأسرة المغربية، المواد 321-395 (الفرائض)",
+                "Réf. : Moudawana marocaine Art. 321-395 (successions)",
+                "Ref: Moroccan Moudawana Art. 321-395 (Faraid)"
               )}
             </p>
+
+            {/* Heritage-specific strong disclaimer */}
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-900 leading-relaxed">
+              ⚠️ {t(
+                "حساب الإرث من أعقد المسائل القانونية. هذه النتيجة تقديرية للتوجيه فقط. استشر عدلاً أو محامياً متخصصاً لتوثيق توزيع التركة رسمياً.",
+                "Le calcul successoral est l'une des questions juridiques les plus complexes. Ce résultat est indicatif seulement. Consultez un notaire ou avocat spécialisé pour la documentation officielle.",
+                "Inheritance calculation is among the most complex legal matters. This result is indicative only. Consult a specialist notary or lawyer for official estate distribution."
+              )}
+            </div>
+
+            {/* Share buttons */}
+            <ShareButtons
+              title={t("حاسبة الميراث", "Calculateur de succession", "Inheritance Calculator")}
+              slug="heritage"
+              dict={dict}
+            />
+
+            <button
+              type="button"
+              onClick={doReset}
+              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              ↺ {dict.simReset || "Reset"}
+            </button>
           </div>
-        </SimulatorResultCard>
+
+          {/* Zone 4: Articles Strip */}
+          <CalculatorArticlesStrip
+            articles={CALCULATOR_ARTICLES.heritage}
+            lang={lang}
+            dict={dict}
+            onArticleClick={setModalArticle}
+          />
+
+          {/* Zone 5: Related Calculators */}
+          <div className="mt-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+              {dict.simRelatedCalcs || "Related Calculators"}
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {RELATED_CALCULATORS.heritage.map((rel) => (
+                <a
+                  key={rel.slug}
+                  href={`/simulateurs/${rel.slug}`}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-colors shadow-sm"
+                >
+                  <span>{rel.icon}</span>
+                  <span>{dict[rel.titleKey] || rel.titleKey}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* Article Modal */}
+      <ArticleModal articleRef={modalArticle} lang={lang} dict={dict} onClose={() => setModalArticle(null)} />
+
+      <style jsx global>{`
+        @keyframes simSlideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
