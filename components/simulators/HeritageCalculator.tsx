@@ -156,10 +156,13 @@ function calcInheritance(inp: InheritanceInput): HeirResult[] {
   const residualHeirs: typeof shares = [];
 
   if (hasSon && inp.daughter > 0) {
+    // Split residue between sons and daughters at 2:1 — compute fractions directly
+    // so perPersonAmount reflects the correct ratio, not an equal head-count split.
     const units = inp.son * 2 + inp.daughter;
-    add("son_daughter", "أبناء وبنات (تعصيب)", "Fils + Filles (résidu)", "Son(s)+Daughter(s) (residual)", inp.son + inp.daughter,
-      frac(0, 1), false, `${inp.son} ابن + ${inp.daughter} بنت (للذكر مثل حظ الأنثيين)`);
-    residualHeirs.push({ key: "son_daughter", labelAr: "", labelFr: "", labelEn: "", count: units, frac: residual, blocked: false });
+    const sonFrac = frac(residual.n * inp.son * 2, residual.d * units);
+    const dauFrac = frac(residual.n * inp.daughter, residual.d * units);
+    add("son_residual", "ابن (تعصيب)", "Fils (résidu)", "Son(s) (residual)", inp.son, sonFrac, false, "للذكر مثل حظ الأنثيين");
+    add("daughter_residual", "بنت (تعصيب)", "Fille(s) (résidu)", "Daughter(s) (residual)", inp.daughter, dauFrac, false, "للذكر مثل حظ الأنثيين");
   } else if (hasSon) {
     add("son", "ابن/أبناء", "Fils", "Son(s)", inp.son, frac(0, 1), false, "يرث بالتعصيب");
     residualHeirs.push({ key: "son", labelAr: "", labelFr: "", labelEn: "", count: inp.son, frac: residual, blocked: false });
