@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { getDictionary, getLocale } from "../../lib/i18n";
 import { makeArticleLinksClickable } from "../../lib/articleLinks";
+import { GUIDES } from "../../lib/guidesData";
 import Container from "../../components/Container";
 import Footer from "../../components/Footer";
 
 const GuidesPage = async () => {
   const locale = await getLocale();
   const dict = getDictionary(locale);
+  const isAr = locale === "ar";
+
+  // Guides published within the last 30 days get a "new" badge
+  const now = Date.now();
+  const featuredGuides = GUIDES.map((g) => ({
+    ...g,
+    isNew: now - new Date(g.publishedAt).getTime() < 30 * 24 * 60 * 60 * 1000,
+  }));
 
   const legalGuides = [
     {
@@ -123,7 +132,63 @@ const GuidesPage = async () => {
         <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">{dict.guidesSubtitle}</p>
       </div>
 
+      {/* Featured deep-dive guides */}
+      {featuredGuides.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+            {isAr ? "أدلة شاملة" : "Guides complets"}
+          </h2>
+          <div className="grid gap-4">
+            {featuredGuides.map((guide) => {
+              const title = isAr ? guide.titleAr : guide.titleFr;
+              const desc  = isAr ? guide.descriptionAr : guide.descriptionFr;
+              return (
+                <Link
+                  key={guide.slug}
+                  href={`/guides/${guide.slug}`}
+                  className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50/40 p-5 hover:border-green-400 hover:shadow-md transition-all"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-600 text-white text-xl">
+                    📜
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-[11px] font-bold text-green-800">
+                        {isAr ? "دليل شامل" : "Guide complet"}
+                      </span>
+                      {guide.isNew && (
+                        <span className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                          {isAr ? "جديد" : "Nouveau"}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate-400">
+                        {isAr ? `${guide.readingTimeMinutes} دقائق` : `${guide.readingTimeMinutes} min`}
+                      </span>
+                    </div>
+                    <p className="font-bold text-slate-900 leading-snug group-hover:text-green-800 transition-colors">
+                      {title}
+                    </p>
+                    <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{desc}</p>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 shrink-0 text-green-600 ltr:rotate-0 rtl:rotate-180 opacity-60 group-hover:opacity-100 transition-opacity"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Guide cards — 2-column responsive grid */}
+      <div className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+        {isAr ? "مسارات إجرائية" : "Guides procéduraux"}
+      </h2>
       <div className="grid gap-5 md:grid-cols-2">
         {legalGuides.map((guide) => {
           const c = colors[guide.color] || colors.slate;
@@ -172,6 +237,7 @@ const GuidesPage = async () => {
             </div>
           );
         })}
+      </div>
       </div>
 
     </div>
