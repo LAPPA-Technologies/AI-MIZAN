@@ -25,8 +25,8 @@ export async function generateMetadata({
     alternates: {
       canonical: `/guides/${guide.slug}`,
       languages: {
-        ar: `/guides/${guide.slug}?lang=ar`,
-        fr: `/guides/${guide.slug}?lang=fr`,
+        "ar-MA": `/guides/${guide.slug}?lang=ar`,
+        "fr-MA": `/guides/${guide.slug}?lang=fr`,
       },
     },
     openGraph: {

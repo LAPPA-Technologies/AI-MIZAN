@@ -43,9 +43,9 @@ export interface Guide {
 export const GUIDES: Guide[] = [
   {
     slug: "calcul-heritage-maroc",
-    titleAr: "كيف يُحسب الإرث في المغرب؟ دليل الفرائض الكامل",
-    titleFr: "Comment calculer l'héritage au Maroc ? Guide complet des Farâ'id",
-    titleEn: "How to Calculate Inheritance in Morocco? Complete Faraid Guide",
+    titleAr: "دليل الإرث والفرائض في المغرب",
+    titleFr: "Héritage au Maroc — Guide des Farâ'id",
+    titleEn: "Inheritance in Morocco — Faraid Guide",
     descriptionAr:
       "دليل شامل لحساب حصص الإرث الشرعية في المغرب وفق مدونة الأسرة والفرائض الإسلامية، مع أمثلة عملية وحاسبة مجانية.",
     descriptionFr:

@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useCallback, lazy, Suspense } from "react";
+
+// Fallback order: requested lang → ar → fr. EN never falls back to FR.
+function pick(ar: string, fr: string, en: string, lang: string): string {
+  if (lang === "ar") return ar || fr || en;
+  if (lang === "fr") return fr || ar || en;
+  return en || ar || fr;
+}
 import Link from "next/link";
 import type { Guide } from "../../lib/guidesData";
 import type { ArticleRef } from "../../lib/calculatorArticles";
@@ -119,28 +126,19 @@ function formatDate(iso: string, lang: string): string {
 export default function GuideArticle({ guide, lang, dict }: Props) {
   const [openArticle, setOpenArticle] = useState<ArticleRef | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const isAr = lang === "ar";
   const isFr = lang === "fr";
 
-  const title = isAr ? guide.titleAr : isFr ? guide.titleFr : guide.titleEn;
-  const description = isAr ? guide.descriptionAr : isFr ? guide.descriptionFr : guide.descriptionEn;
+  const title = pick(guide.titleAr, guide.titleFr, guide.titleEn, lang);
+  const description = pick(guide.descriptionAr, guide.descriptionFr, guide.descriptionEn, lang);
 
   const cat = CATEGORY_LABELS[guide.category] ?? CATEGORY_LABELS.family;
-  const catLabel = isAr ? cat.ar : cat.fr;
+  const catLabel = pick(cat.ar, cat.fr, cat.ar, lang);
   const colors = COLOR_CLASSES[cat.color] ?? COLOR_CLASSES.green;
 
-  const keyPoints = isAr ? guide.keyPoints.ar : guide.keyPoints.fr;
-
-  const handleCopy = useCallback(() => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
-    }
-  }, []);
+  // keyPoints only has AR and FR; EN falls back to AR
+  const keyPoints = lang === "fr" ? guide.keyPoints.fr : guide.keyPoints.ar;
 
   const openArticleRef = useCallback(
     (number: string, code: string, labelAr: string) => {
@@ -216,8 +214,8 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
           </span>
         </div>
 
-        {/* Share buttons */}
-        <div className="flex flex-wrap gap-3 pt-1">
+        {/* Share — WhatsApp mobile only */}
+        <div className="md:hidden pt-1">
           <a
             href={`https://wa.me/?text=${waText}`}
             target="_blank"
@@ -229,26 +227,6 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
             </svg>
             WhatsApp
           </a>
-          <button
-            onClick={handleCopy}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            {copied ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                {isAr ? "تم النسخ!" : "Copié !"}
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                {isAr ? "نسخ الرابط" : "Copier le lien"}
-              </>
-            )}
-          </button>
         </div>
       </header>
 
@@ -275,8 +253,8 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
       {/* ── ZONE 3: Guide sections ── */}
       <div className="space-y-10">
         {guide.sections.map((section) => {
-          const sectionTitle = isAr ? section.titleAr : isFr ? section.titleFr : section.titleEn;
-          const sectionContent = isAr ? section.contentAr : isFr ? section.contentFr : section.contentEn;
+          const sectionTitle = pick(section.titleAr, section.titleFr, section.titleEn, lang);
+          const sectionContent = pick(section.contentAr, section.contentFr, section.contentEn, lang);
 
           return (
             <section key={section.id} className="space-y-4">
@@ -347,8 +325,8 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
           </h2>
           <div className="space-y-2">
             {guide.faqs.map((faq, i) => {
-              const q = isAr ? faq.questionAr : faq.questionFr;
-              const a = isAr ? faq.answerAr : faq.answerFr;
+              const q = pick(faq.questionAr, faq.questionFr, faq.questionAr, lang);
+              const a = pick(faq.answerAr, faq.answerFr, faq.answerAr, lang);
               const isOpen = openFaq === i;
               return (
                 <div
