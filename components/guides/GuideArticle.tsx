@@ -41,19 +41,34 @@ const COLOR_CLASSES: Record<string, { badge: string }> = {
   slate:  { badge: "bg-slate-100 text-slate-800 border-slate-200"  },
 };
 
-// Renders a subset of markdown: **bold**, | tables |, plain paragraphs separated by \n\n
+// Renders: **bold**, `code`, | tables |, - lists, bold-only headings, paragraphs
 function renderContent(text: string): React.ReactNode {
+  // Inline renderer: **bold** and `code`
+  function renderInline(line: string): React.ReactNode {
+    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return <code key={i} className="font-mono text-green-700 text-base">{part.slice(1, -1)}</code>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }
+
   const blocks = text.split(/\n\n+/);
   return blocks.map((block, bi) => {
+    const trimmed = block.trim();
+
     // Markdown table
-    if (block.trim().startsWith("|")) {
-      const rows = block
-        .trim()
+    if (trimmed.startsWith("|")) {
+      const rows = trimmed
         .split("\n")
         .filter((r) => !/^\|[-\s|]+\|$/.test(r.trim()));
       return (
-        <div key={bi} className="overflow-x-auto my-4">
-          <table className="w-full text-sm border-collapse rounded-lg overflow-hidden">
+        <div key={bi} className="overflow-x-auto my-4 rounded-lg border border-slate-200">
+          <table className="w-full text-sm border-collapse min-w-[320px]">
             {rows.map((row, ri) => {
               const cells = row
                 .split("|")
@@ -67,12 +82,12 @@ function renderContent(text: string): React.ReactNode {
                 >
                   {cells.map((cell, ci) =>
                     isHeader ? (
-                      <th key={ci} className="px-3 py-2 text-start font-semibold border border-green-600">
+                      <th key={ci} className="px-3 py-2.5 text-start font-semibold border border-green-600 whitespace-nowrap">
                         {cell}
                       </th>
                     ) : (
-                      <td key={ci} className="px-3 py-2 border border-slate-200">
-                        {cell}
+                      <td key={ci} className="px-3 py-2.5 border border-slate-200">
+                        {renderInline(cell)}
                       </td>
                     )
                   )}
@@ -84,29 +99,42 @@ function renderContent(text: string): React.ReactNode {
       );
     }
 
-    // Render bold spans inline
-    const renderInline = (line: string): React.ReactNode => {
-      const parts = line.split(/(\*\*[^*]+\*\*)/g);
-      return parts.map((part, i) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return <strong key={i} className="font-semibold text-slate-900">{part.slice(2, -2)}</strong>;
-        }
-        return <span key={i}>{part}</span>;
-      });
-    };
+    // Bold-only heading block: entire block is **heading text**
+    if (/^\*\*[^*]+\*\*$/.test(trimmed)) {
+      return (
+        <h3 key={bi} className="text-lg font-bold text-slate-800 mt-5 mb-2">
+          {trimmed.slice(2, -2)}
+        </h3>
+      );
+    }
 
-    // Quranic quote block (lines with "مِن بَعْدِ" or surrounded by ")
-    if (block.includes("مِن بَعْدِ") || (block.trim().startsWith('"') && block.trim().endsWith('"'))) {
+    // Quranic quote block
+    if (trimmed.includes("مِن بَعْدِ") || (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
       return (
         <blockquote key={bi} className="my-4 bg-green-50 border-r-4 border-green-500 px-4 py-3 text-base italic text-slate-700 leading-8 rounded-r-lg">
-          {renderInline(block)}
+          {renderInline(trimmed)}
         </blockquote>
       );
     }
 
+    // Bullet list: all lines start with "- "
+    const lines = trimmed.split("\n");
+    if (lines.length > 0 && lines.every((l) => l.trimStart().startsWith("- "))) {
+      return (
+        <ul key={bi} className="space-y-2 my-3 list-none ps-0">
+          {lines.map((line, li) => (
+            <li key={li} className="flex items-start gap-2.5 text-lg text-slate-700 leading-9">
+              <span className="mt-3.5 shrink-0 h-1.5 w-1.5 rounded-full bg-green-600" />
+              <span>{renderInline(line.replace(/^-\s*/, ""))}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
     return (
-      <p key={bi} className="text-lg text-slate-700 leading-9 mb-3">
-        {renderInline(block)}
+      <p key={bi} className="text-lg text-slate-700 leading-9 mb-4">
+        {renderInline(trimmed)}
       </p>
     );
   });

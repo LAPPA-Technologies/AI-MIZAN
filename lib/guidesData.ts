@@ -207,42 +207,42 @@ Note: Si la somme des parts dépasse l'unité, on applique le principe de l'awl 
         titleAr: "مثال عملي — تركة 500,000 درهم",
         titleFr: "Exemple pratique — Succession de 500 000 MAD",
         titleEn: "Practical Example — 500,000 MAD Estate",
-        contentAr: `**الحالة:** توفي رجل وترك: زوجة واحدة، ابناً، وبنتاً. قيمة التركة الصافية (بعد خصم الديون ومصاريف الجنازة): 500,000 درهم.
+        contentAr: `**الخطوة الأولى — تحديد الورثة وحصصهم**
 
-**الخطوة الأولى — تحديد الورثة وحصصهم:**
-- الزوجة: صاحبة فرض مقدر — 1/8 لوجود أبناء
-- الابن: عاصب (يرث الباقي)
-- البنت: عاصبة مع الابن (للذكر مثل حظ الأنثيين)
+| الوارث | النوع | الحصة الشرعية |
+|--------|-------|---------------|
+| الزوجة | فرض مقدر | 1/8 (لوجود أبناء) |
+| الابن | عصبة | الباقي — وحدتان |
+| البنت | عصبة مع الأخ | الباقي — وحدة |
 
-**الخطوة الثانية — الحساب:**
-- **الزوجة: 1/8 × 500,000 = 62,500 درهم**
-- الباقي للتعصيب: 7/8 × 500,000 = 437,500 درهم
-- الابن (وحدتان) + البنت (وحدة) = 3 وحدات
-- قيمة الوحدة: 437,500 ÷ 3 = 145,833.33 درهم
-- **الابن: 145,833.33 × 2 = 291,666.67 درهم**
-- **البنت: 145,833.33 × 1 = 145,833.33 درهم**
+**الخطوة الثانية — الحساب**
 
-**التحقق:** 62,500 + 291,666.67 + 145,833.33 = 500,000 درهم ✓
+- الزوجة: 500,000 × 1/8 = **62,500 درهم**
+- الباقي للتعصيب: 500,000 × 7/8 = **437,500 درهم**
+- إجمالي الوحدات: 2 (ابن) + 1 (بنت) = 3 وحدات
+- قيمة الوحدة: 437,500 ÷ 3 = **145,833 درهم**
+- **الابن: 145,833 × 2 = 291,667 درهم**
+- **البنت: 145,833 × 1 = 145,833 درهم**
 
-جرّب حاسبتنا المجانية أدناه للحصول على نتيجة مخصصة لحالتك.`,
-        contentFr: `**Cas:** Un homme décède laissant: une épouse, un fils, une fille. Valeur nette de la succession (après déduction des dettes et frais funéraires): 500 000 MAD.
+**التحقق:** 62,500 + 291,667 + 145,833 = 500,000 ✓`,
+        contentFr: `**Étape 1 — Identifier les héritiers et leurs parts**
 
-**Étape 1 — Identifier les héritiers et leurs parts:**
-- Épouse: ayant droit à quote-part fixe — 1/8 avec des enfants
-- Fils: résidualité (hérite du reste)
-- Fille: résidualité avec le fils (le fils hérite du double de la fille)
+| Héritier | Type | Quote-part légale |
+|----------|------|-------------------|
+| Épouse | Quote-part fixe | 1/8 (avec enfants) |
+| Fils | Résidualité | Résidu — 2 unités |
+| Fille | Résidualité avec frère | Résidu — 1 unité |
 
-**Étape 2 — Le calcul:**
-- **Épouse: 1/8 × 500 000 = 62 500 MAD**
-- Résidu pour ta'sib: 7/8 × 500 000 = 437 500 MAD
-- Fils (2 parts) + Fille (1 part) = 3 unités
-- Valeur unitaire: 437 500 ÷ 3 = 145 833,33 MAD
-- **Fils: 145 833,33 × 2 = 291 666,67 MAD**
-- **Fille: 145 833,33 × 1 = 145 833,33 MAD**
+**Étape 2 — Le calcul**
 
-**Vérification:** 62 500 + 291 666,67 + 145 833,33 = 500 000 MAD ✓
+- Épouse: 500 000 × 1/8 = **62 500 MAD**
+- Résidu pour ta'sib: 500 000 × 7/8 = **437 500 MAD**
+- Total unités: 2 (fils) + 1 (fille) = 3 unités
+- Valeur unitaire: 437 500 ÷ 3 = **145 833 MAD**
+- **Fils: 145 833 × 2 = 291 667 MAD**
+- **Fille: 145 833 × 1 = 145 833 MAD**
 
-Utilisez notre calculateur gratuit ci-dessous pour obtenir un résultat personnalisé.`,
+**Vérification:** 62 500 + 291 667 + 145 833 = 500 000 ✓`,
         contentEn: `Practical example of calculating a 500,000 MAD estate with a wife, son, and daughter.`,
       },
       {
