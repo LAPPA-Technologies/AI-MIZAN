@@ -745,7 +745,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
                         <div key={i} className="heir-row bg-slate-50 rounded-lg px-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-semibold text-slate-400 line-through">
+                              <p className="text-sm font-semibold text-slate-400">
                                 {t(r.labelAr, r.labelFr, r.labelEn)}
                                 {r.count > 1 && <span className="font-normal"> ×{r.count}</span>}
                               </p>
@@ -758,7 +758,7 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
                             )}
                           </div>
                           <div className={`text-right shrink-0 ${isRtl ? "text-left" : ""}`}>
-                            <span className="text-xs text-slate-300 line-through">0 MAD</span>
+                            <span className="text-xs text-slate-300">0 MAD</span>
                           </div>
                         </div>
                       ))}
