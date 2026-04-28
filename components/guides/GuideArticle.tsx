@@ -355,8 +355,8 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
           </h2>
           <div className="space-y-2">
             {guide.faqs.map((faq, i) => {
-              const q = pick(faq.questionAr, faq.questionFr, faq.questionFr, lang);
-              const a = pick(faq.answerAr, faq.answerFr, faq.answerFr, lang);
+              const q = pick(faq.questionAr, faq.questionFr, faq.questionEn, lang);
+              const a = pick(faq.answerAr, faq.answerFr, faq.answerEn, lang);
               const isOpen = openFaq === i;
               return (
                 <div

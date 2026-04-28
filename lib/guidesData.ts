@@ -36,8 +36,10 @@ export interface Guide {
   faqs: Array<{
     questionAr: string;
     questionFr: string;
+    questionEn: string;
     answerAr: string;
     answerFr: string;
+    answerEn: string;
   }>;
 }
 
@@ -98,7 +100,11 @@ export const GUIDES: Guide[] = [
 Le système successoral marocain se distingue par sa précision arithmétique et ses règles strictes qui déterminent la part de chaque héritier sans laisser de marge d'interprétation pour les quotes-parts fixées par la loi islamique. Chaque héritier a une part précisément calculée selon son degré de parenté avec le défunt, son sexe et la présence ou l'absence d'autres héritiers.
 
 Il convient de noter que le Maroc a adopté le rite malékite comme base de son système successoral, avec quelques ijtihad issus de la politique juridique islamique. Les affaires litigieuses relèvent des tribunaux de la famille, tandis que les adouls se chargent de la documentation de l'hérédité.`,
-        contentEn: `Inheritance is one of the most sensitive and complex legal issues in Morocco, combining Islamic sharia rules drawn from the Quran and Sunna with the legal organization provided by the Moudawana (Law 70-03) in its sixth book, Articles 321 to 395.`,
+        contentEn: `Inheritance is one of the most sensitive and complex legal matters in Morocco. It combines Islamic sharia rules drawn from the Quran and Sunna with the legal framework provided by the Moudawana (Law 70-03) in its sixth book, Articles 321 to 395.
+
+The Moroccan inheritance system is characterized by its arithmetical precision and strict rules that determine each heir's share without leaving room for interpretation of the legally fixed quotas. Each heir has a precisely calculated share based on their degree of kinship with the deceased, their gender, and the presence or absence of other heirs.
+
+It is worth noting that Morocco adopted the Maliki rite as the basis of its inheritance system, with some ijtihad drawn from Islamic legal policy. Contested cases fall under family courts, while adouls handle the official documentation of estates.`,
         articleRefs: [
           { number: "321", code: "family_code", labelAr: "تعريف التركة" },
           { number: "322", code: "family_code", labelAr: "أركان الإرث" },
@@ -129,7 +135,17 @@ Il convient de noter que le Maroc a adopté le rite malékite comme base de son 
 **3. Legs** — ne dépassant pas le tiers du reste après dettes et frais funéraires, et ne pouvant bénéficier à un héritier. Le défunt peut léguer jusqu'au tiers de sa succession à toute personne ou œuvre caritative, à condition que le bénéficiaire ne soit pas un héritier.
 
 **4. Le solde** — distribué selon les règles des quotes-parts légales.`,
-        contentEn: `Before distributing inheritance to heirs, the following rights must be settled in order, according to the Quranic verse (An-Nisa: 11-12).`,
+        contentEn: `Before distributing the inheritance to heirs, the following rights must be settled in order, in accordance with the Quranic verse (An-Nisa: 11-12): "after execution of the bequest and payment of debts"
+
+**1. Funeral expenses** — deducted first from the estate, including funeral preparations and burial ceremonies according to custom.
+
+**2. Debts** — repaid in full before any distribution (Art. 322). Includes all debts of the deceased to individuals, financial institutions, or the State, including bank loans and unpaid rent.
+
+**3. Bequest** — not exceeding one third of the remainder after debts and funeral expenses, and cannot benefit an heir. The deceased may bequeath up to one third of their estate to any person or charitable cause, provided the beneficiary is not an heir.
+
+**4. The balance** — distributed to the heirs according to the legally fixed share rules.
+
+Common mistake: Many families begin distributing assets before settling debts, which can expose heirs to legal liability at a later stage.`,
         articleRefs: [
           { number: "322", code: "family_code", labelAr: "الحقوق المتعلقة بالتركة" },
         ],
@@ -161,7 +177,17 @@ Fils et fils du fils, frère germain, frère consanguin, oncle paternel germain,
 **Règle d'or:** le fils hérite du double de la fille en ta'sib — mais cette règle ne s'applique pas toujours. Les filles ont des parts fixes en l'absence de fils: la fille unique hérite de la moitié, deux filles et plus héritent des deux tiers.
 
 **Exclusion (Hajb):** certains héritiers excluent d'autres totalement ou partiellement. Par exemple: le fils exclut le frère, le père exclut le grand-père.`,
-        contentEn: `Heirs in Moroccan law are divided into two main categories: fixed-share heirs (Ashabu al-furud) and residuary heirs (Asaba).`,
+        contentEn: `Heirs in Moroccan law are divided into two main categories:
+
+**Fixed-share heirs (Ashabu al-furud)** — heirs whose shares are directly fixed by the Quran:
+Husband or wife, father, mother, daughter, son's daughter, full sister, paternal half-sister, maternal half-brother/sister.
+
+**Residuary heirs (Asaba)** — inherit the residue after fixed-share heirs have received their portions, and some exclude others:
+Son and son's son (however far down), full brother, paternal half-brother, full paternal uncle, son of uncle...
+
+**Golden rule:** a son inherits double a daughter's share in ta'sib — but this rule does not always apply. Daughters have fixed shares in the absence of sons: a single daughter inherits half, two or more daughters inherit two thirds.
+
+**Exclusion (Hajb):** some heirs exclude others wholly or partially. For example: a son excludes a brother, a father excludes a grandfather.`,
         articleRefs: [
           { number: "335", code: "family_code", labelAr: "أصحاب الفروض المقدرة" },
           { number: "341", code: "family_code", labelAr: "حصة الزوج والزوجة" },
@@ -204,7 +230,22 @@ Fils et fils du fils, frère germain, frère consanguin, oncle paternel germain,
 | Père | résidu | Sans descendants |
 
 Note: Si la somme des parts dépasse l'unité, on applique le principe de l'awl (réduction proportionnelle). Si elle est inférieure, on applique le radd (retour de l'excédent aux héritiers).`,
-        contentEn: `The six fixed shares in Moroccan law are: half, quarter, eighth, two-thirds, third, and sixth.`,
+        contentEn: `The six fixed shares in Moroccan law are: half, quarter, eighth, two-thirds, third, and sixth.
+
+| Heir | Share | Condition |
+|------|-------|-----------|
+| Husband | 1/2 | No descendants |
+| Husband | 1/4 | With descendants |
+| Wife/Wives | 1/4 | No descendants |
+| Wife/Wives | 1/8 | With descendants |
+| Single daughter | 1/2 | No son |
+| 2+ daughters | 2/3 | No son |
+| Mother | 1/3 | No descendants or group of siblings |
+| Mother | 1/6 | With descendants or group of siblings |
+| Father | 1/6 + residue | With son |
+| Father | residue | No descendants |
+
+Note: If the sum of shares exceeds one, the principle of awl (proportional reduction) applies. If it falls short, the radd (return of surplus to heirs) applies.`,
         articleRefs: [
           { number: "346", code: "family_code", labelAr: "حصة الأم" },
           { number: "347", code: "family_code", labelAr: "حصة الأب" },
@@ -251,7 +292,24 @@ Note: Si la somme des parts dépasse l'unité, on applique le principe de l'awl 
 - **Fille: 145 833 × 1 = 145 833 MAD**
 
 **Vérification:** 62 500 + 291 667 + 145 833 = 500 000 ✓`,
-        contentEn: `Practical example of calculating a 500,000 MAD estate with a wife, son, and daughter.`,
+        contentEn: `**Step 1 — Identify heirs and their shares**
+
+| Heir | Type | Legal share |
+|------|------|-------------|
+| Wife | Fixed share | 1/8 (with children) |
+| Son | Residuary | Residue — 2 units |
+| Daughter | Residuary with brother | Residue — 1 unit |
+
+**Step 2 — The calculation**
+
+- Wife: 500,000 × 1/8 = **62,500 MAD**
+- Residue for ta'sib: 500,000 × 7/8 = **437,500 MAD**
+- Total units: 2 (son) + 1 (daughter) = 3 units
+- Unit value: 437,500 ÷ 3 = **145,833 MAD**
+- **Son: 145,833 × 2 = 291,667 MAD**
+- **Daughter: 145,833 × 1 = 145,833 MAD**
+
+**Verification:** 62,500 + 291,667 + 145,833 = 500,000 ✓`,
       },
       {
         id: "documentation",
@@ -286,41 +344,66 @@ Note: Si la somme des parts dépasse l'unité, on applique le principe de l'awl 
 - Acte d'hérédité: 500 à 2 000 MAD (selon l'adoul et la complexité du dossier)
 - Frais d'enregistrement foncier: variables selon la valeur du bien
 - Honoraires d'avocat (optionnel): 2 000 à 10 000 MAD`,
-        contentEn: `After calculating shares, official documentation is required before any property transfer can occur.`,
+        contentEn: `After calculating the shares, official documentation is required before any property transfer can take place. Documents generally needed:
+
+**1. Certificate of Heirship (Rasm al-Ira'tha)** — an official document drawn up by adouls, certifying each heir's status and share. Property transfers are impossible without this document. To obtain it: death certificate + national ID cards of all heirs + two adoul witnesses.
+
+**2. Death certificate** — the foundational document for all procedures. Obtained from the relevant civil registry office.
+
+**3. Title deeds** — for all assets of the deceased (real estate, vehicles, bank accounts).
+
+**4. Transfer deed** — if the heirs wish to sell a property by mutual agreement.
+
+**Approximate costs:**
+- Certificate of heirship: 500 to 2,000 MAD (depending on the adoul and file complexity)
+- Land registration fees: vary by property value
+- Lawyer fees (optional): 2,000 to 10,000 MAD`,
       },
     ],
     faqs: [
       {
         questionAr: "هل يمكن حرمان وارث من الإرث في المغرب؟",
         questionFr: "Peut-on déshériter un héritier au Maroc?",
+        questionEn: "Can an heir be disinherited in Morocco?",
         answerAr:
           "لا. لا يمكن حرمان وارث شرعي من نصيبه في الإرث وفق القانون المغربي. الوصية لا تكون للوارث ولا تتجاوز ثلث التركة. حتى لو كتب الشخص وصية تحرم أحد الورثة، فإن تلك الوصية لا تُنفَّذ بالنسبة للحصة الشرعية للوارث.",
         answerFr:
           "Non. Un héritier légal ne peut pas être déshérité selon la loi marocaine. Le legs ne peut pas bénéficier à un héritier et ne peut dépasser le tiers de la succession. Même si le défunt a rédigé un testament déshéritant un héritier, ce testament ne s'applique pas à la part légale de cet héritier.",
+        answerEn:
+          "No. A legal heir cannot be disinherited under Moroccan law. A bequest cannot benefit an heir and cannot exceed one third of the estate. Even if the deceased wrote a will disinheriting an heir, that will does not apply to the heir's legally fixed share.",
       },
       {
         questionAr: "هل ترث المرأة مثل الرجل في المغرب؟",
         questionFr: "La femme hérite-t-elle autant que l'homme au Maroc?",
+        questionEn: "Does a woman inherit the same as a man in Morocco?",
         answerAr:
           "يختلف الأمر حسب الحالة. في التعصيب (كالأبناء والبنات معاً)، للذكر مثل حظ الأنثيين. لكن في حالات أخرى، قد ترث المرأة نفس حصة الرجل أو أكثر — مثلاً: الأخ والأخت لأم يرثان بالتساوي (كل منهما السدس)، وعند انفراد الأم، ترث الثلث بينما يرث الأب السدس فقط في وجود أبناء.",
         answerFr:
           "Cela dépend de la situation. En cas de ta'sib (fils et filles ensemble), le fils hérite du double de la fille. Dans d'autres cas, la femme peut hériter autant voire plus — par exemple: le frère et la sœur utérins héritent à parts égales (chacun un sixième), et lorsque la mère hérite seule, elle reçoit le tiers alors que le père ne reçoit qu'un sixième en présence d'enfants.",
+        answerEn:
+          "It depends on the situation. In ta'sib (sons and daughters together), a son inherits double a daughter's share. In other cases, a woman may inherit the same or more — for example: maternal half-brother and half-sister inherit equally (each one sixth), and when the mother inherits alone, she receives one third while the father receives only one sixth in the presence of children.",
       },
       {
         questionAr: "ما هو رسم الإراثة وكيف أحصل عليه؟",
         questionFr: "Qu'est-ce que l'acte d'hérédité et comment l'obtenir?",
+        questionEn: "What is the certificate of heirship and how do I obtain it?",
         answerAr:
           "رسم الإراثة وثيقة رسمية تُحررها العدول تُثبت الورثة الشرعيين وحصصهم. للحصول عليه تحتاج: شهادة الوفاة + بطاقات التعريف الوطنية للورثة + شاهدَا عدل يشهدان على هوية الورثة وصلتهم بالمتوفى. التكلفة: حوالي 500-2,000 درهم. المدة: 3-7 أيام في الغالب.",
         answerFr:
           "L'acte d'hérédité est un document officiel établi par les adouls qui identifie les héritiers légaux et leurs parts. Pour l'obtenir: certificat de décès + CNI des héritiers + deux adouls témoins attestant de l'identité des héritiers et de leur lien avec le défunt. Coût: environ 500-2 000 MAD. Délai: généralement 3 à 7 jours.",
+        answerEn:
+          "The certificate of heirship (Rasm al-Ira'tha) is an official document drawn up by adouls identifying the legal heirs and their shares. To obtain it: death certificate + national ID cards of all heirs + two adoul witnesses attesting to the heirs' identities and relationship with the deceased. Cost: approximately 500–2,000 MAD. Timeframe: usually 3 to 7 days.",
       },
       {
         questionAr: "هل يتغير الإرث بسبب إصلاح مدونة الأسرة 2026؟",
         questionFr: "L'héritage change-t-il avec la réforme de la Moudawana 2026?",
+        questionEn: "Will inheritance change with the 2026 Moudawana reform?",
         answerAr:
           "الإصلاح المقترح لمدونة الأسرة 2026 يركز أساساً على مسائل الزواج والطلاق والحضانة والنفقة. أحكام الإرث (الفرائض) مستندة إلى نصوص قرآنية صريحة — وهذا ما جعل المشرّع المغربي يحافظ عليها دون تغيير جوهري. لا يُتوقع تعديل قواعد الحصص المقدرة.",
         answerFr:
           "La réforme proposée de la Moudawana 2026 se concentre principalement sur le mariage, le divorce, la garde et la pension alimentaire. Les règles d'héritage (Farâ'id) sont directement basées sur des textes coraniques explicites — c'est ce qui a conduit le législateur marocain à les maintenir sans modification substantielle. Aucune révision des règles de quotes-parts fixes n'est attendue.",
+        answerEn:
+          "The proposed 2026 Moudawana reform focuses primarily on marriage, divorce, custody, and alimony. Inheritance rules (Farâ'id) are directly based on explicit Quranic texts — which is why the Moroccan legislator has maintained them without substantial change. No revision of the fixed-share rules is expected.",
       },
     ],
   },
