@@ -31,6 +31,7 @@ export interface Guide {
   keyPoints: {
     ar: string[];
     fr: string[];
+    en: string[];
   };
   faqs: Array<{
     questionAr: string;
@@ -72,6 +73,13 @@ export const GUIDES: Guide[] = [
         "Le fils hérite du double de la fille en cas de ta'sib",
         "L'asaba (comme le fils) hérite du résidu après les ayants droit à quote-part fixe",
         "La succession doit être documentée officiellement par un adoul ou avocat",
+      ],
+      en: [
+        "Inheritance in Morocco is governed by the Moudawana (Art. 321-395) based on Maliki fiqh",
+        "Before distribution: deduct debts, funeral costs and bequest (max 1/3 of estate)",
+        "A son inherits double a daughter's share in ta'sib — but daughters have fixed shares without sons",
+        "The asaba (like a son) inherits the residue after fixed-share heirs",
+        "The estate must be officially documented through an adoul or lawyer",
       ],
     },
     sections: [

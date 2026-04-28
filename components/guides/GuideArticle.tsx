@@ -162,11 +162,13 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
   const description = pick(guide.descriptionAr, guide.descriptionFr, guide.descriptionEn, lang);
 
   const cat = CATEGORY_LABELS[guide.category] ?? CATEGORY_LABELS.family;
-  const catLabel = pick(cat.ar, cat.fr, cat.ar, lang);
+  const catLabel = pick(cat.ar, cat.fr, cat.fr, lang);
   const colors = COLOR_CLASSES[cat.color] ?? COLOR_CLASSES.green;
 
-  // keyPoints only has AR and FR; EN falls back to AR
-  const keyPoints = lang === "fr" ? guide.keyPoints.fr : guide.keyPoints.ar;
+  const keyPoints =
+    lang === "ar" ? guide.keyPoints.ar :
+    lang === "fr" ? guide.keyPoints.fr :
+    (guide.keyPoints.en ?? guide.keyPoints.fr);
 
   const openArticleRef = useCallback(
     (number: string, code: string, labelAr: string) => {
@@ -198,11 +200,11 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500">
           <Link href="/" className="hover:text-green-700 transition-colors">
-            {isAr ? "الرئيسية" : "Accueil"}
+            {dict.guideBreadcrumbHome}
           </Link>
           <span className="text-slate-300">/</span>
           <Link href="/guides" className="hover:text-green-700 transition-colors">
-            {isAr ? "الأدلة القانونية" : "Guides juridiques"}
+            {dict.guideBreadcrumbGuides}
           </Link>
           <span className="text-slate-300">/</span>
           <span className="text-slate-700 truncate max-w-[180px]">{title}</span>
@@ -214,7 +216,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
             {catLabel}
           </span>
           <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            {isAr ? "مجاني ١٠٠٪" : "100% Gratuit"}
+            {dict.guideFreeLabel}
           </span>
         </div>
 
@@ -232,7 +234,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {isAr ? `${guide.readingTimeMinutes} دقائق قراءة` : `${guide.readingTimeMinutes} min de lecture`}
+            {`${guide.readingTimeMinutes} ${dict.guideReadingTimeLabel}`}
           </span>
           <span className="flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -264,7 +266,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          {isAr ? "النقاط الأساسية" : "Points essentiels"}
+          {dict.guideKeyPointsTitle}
         </h2>
         <ul className="space-y-2.5">
           {keyPoints.map((point, i) => (
@@ -304,7 +306,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       {isAr ? `المادة ${ref.number}` : `Art. ${ref.number}`}
-                      {ref.labelAr && <span className="text-green-600">— {isAr ? ref.labelAr : ref.labelAr}</span>}
+                      {isAr && ref.labelAr && <span className="text-green-600">— {ref.labelAr}</span>}
                     </button>
                   ))}
                 </div>
@@ -325,10 +327,10 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">
-                {isAr ? "جرّب الحاسبة مباشرةً" : "Essayez la calculatrice"}
+                {dict.guideCalcTitle}
               </h2>
               <p className="text-sm text-slate-500">
-                {isAr ? "احسب حصصك الفعلية خلال ثوانٍ" : "Calculez vos parts réelles en quelques secondes"}
+                {dict.guideCalcSubtitle}
               </p>
             </div>
           </div>
@@ -349,12 +351,12 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
       {guide.faqs.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-slate-900">
-            {isAr ? "أسئلة شائعة" : "Questions fréquentes"}
+            {dict.guideFaqTitle}
           </h2>
           <div className="space-y-2">
             {guide.faqs.map((faq, i) => {
-              const q = pick(faq.questionAr, faq.questionFr, faq.questionAr, lang);
-              const a = pick(faq.answerAr, faq.answerFr, faq.answerAr, lang);
+              const q = pick(faq.questionAr, faq.questionFr, faq.questionFr, lang);
+              const a = pick(faq.answerAr, faq.answerFr, faq.answerFr, lang);
               const isOpen = openFaq === i;
               return (
                 <div
@@ -406,19 +408,17 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
         </div>
         <div className="space-y-1.5">
           <h2 className="text-xl font-bold text-slate-900">
-            {isAr ? "هل تحتاج مساعدة قانونية؟" : "Besoin d'aide juridique ?"}
+            {dict.guideLawyerCtaTitle}
           </h2>
           <p className="text-sm text-slate-600 max-w-sm mx-auto leading-6">
-            {isAr
-              ? "يُمكن لمحامٍ متخصص مساعدتك في تطبيق هذه الأحكام على وضعك الخاص وتجنّب النزاعات."
-              : "Un avocat spécialisé peut vous aider à appliquer ces règles à votre situation et éviter les conflits."}
+            {dict.guideLawyerCtaBody}
           </p>
         </div>
         <Link
           href="/services"
           className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-green-700 transition-colors"
         >
-          {isAr ? "تواصل مع محامٍ متخصص" : "Contacter un avocat spécialisé"}
+          {dict.guideLawyerCtaButton}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ltr:rotate-0 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
@@ -428,7 +428,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
       {/* ── ZONE 7: Related guides ── */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-slate-700">
-          {isAr ? "أدلة ذات صلة" : "Guides connexes"}
+          {dict.guideRelatedTitle}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Link
@@ -440,10 +440,10 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
             </span>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-800">
-                {isAr ? "دليل قانون الأسرة" : "Guide droit de la famille"}
+                {dict.guideFamilyLawGuide}
               </p>
               <p className="text-xs text-slate-500 truncate">
-                {isAr ? "الطلاق، الحضانة، النفقة" : "Divorce, garde, pension alimentaire"}
+                {dict.guideFamilyLawDesc}
               </p>
             </div>
           </Link>
@@ -456,10 +456,10 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
             </span>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-800">
-                {isAr ? "جميع الحاسبات القانونية" : "Tous les simulateurs juridiques"}
+                {dict.guideAllCalculators}
               </p>
               <p className="text-xs text-slate-500 truncate">
-                {isAr ? "الراتب، الفصل، الكراء، الموثق" : "Salaire, licenciement, loyer, notaire"}
+                {dict.guideCalculatorsDesc}
               </p>
             </div>
           </Link>
