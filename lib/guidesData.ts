@@ -10,6 +10,8 @@ export interface GuideSection {
     number: string;
     code: string;
     labelAr: string;
+    labelFr?: string;
+    labelEn?: string;
   }>;
 }
 
@@ -27,6 +29,7 @@ export interface Guide {
   publishedAt: string;
   updatedAt: string;
   readingTimeMinutes: number;
+  relatedGuides?: string[];
   sections: GuideSection[];
   keyPoints: {
     ar: string[];
@@ -404,6 +407,360 @@ Note: If the sum of shares exceeds one, the principle of awl (proportional reduc
           "La réforme proposée de la Moudawana 2026 se concentre principalement sur le mariage, le divorce, la garde et la pension alimentaire. Les règles d'héritage (Farâ'id) sont directement basées sur des textes coraniques explicites — c'est ce qui a conduit le législateur marocain à les maintenir sans modification substantielle. Aucune révision des règles de quotes-parts fixes n'est attendue.",
         answerEn:
           "The proposed 2026 Moudawana reform focuses primarily on marriage, divorce, custody, and alimony. Inheritance rules (Farâ'id) are directly based on explicit Quranic texts — which is why the Moroccan legislator has maintained them without substantial change. No revision of the fixed-share rules is expected.",
+      },
+    ],
+  },
+  {
+    slug: "droits-licenciement-maroc",
+    titleAr: "حقوقك عند الفصل التعسفي في المغرب",
+    titleFr: "Droits au licenciement au Maroc",
+    titleEn: "Your Rights When Dismissed in Morocco",
+    descriptionAr: "دليل شامل لحقوقك عند الفصل التعسفي في المغرب — التعويضات والإجراءات والمواعيد القانونية",
+    descriptionFr: "Guide complet de vos droits en cas de licenciement abusif au Maroc — indemnités, procédures et délais légaux",
+    descriptionEn: "Complete guide to your rights when unfairly dismissed in Morocco — compensation, procedures and legal deadlines",
+    category: "labor",
+    relatedCalculator: "licenciement",
+    relatedLawCode: "labor_code",
+    publishedAt: "2026-04-29",
+    updatedAt: "2026-04-29",
+    readingTimeMinutes: 7,
+    relatedGuides: ["calcul-heritage-maroc"],
+    keyPoints: {
+      ar: [
+        "الفصل التعسفي يخوّلك التعويض وفق مدونة الشغل المادة 41",
+        "التعويض = راتب × سنوات الأقدمية × معامل قانوني",
+        "لديك 90 يوماً لرفع شكوى لدى مفتش الشغل — لا تفوّت هذا الأجل",
+        "يحق لك الاحتفاظ بشهادة العمل وتسوية جميع الحقوق",
+        "الفصل بدون سبب مشروع = فصل تعسفي حتى لو أُعطيت مهلة إشعار",
+      ],
+      fr: [
+        "Le licenciement abusif ouvre droit à indemnisation (Art. 41 CT)",
+        "Indemnité = salaire × années d'ancienneté × coefficient légal",
+        "Vous avez 90 jours pour saisir l'Inspecteur du Travail",
+        "Droit au certificat de travail et solde de tout compte complet",
+        "Licenciement sans motif valable = abusif même avec préavis respecté",
+      ],
+      en: [
+        "Unfair dismissal entitles you to compensation under Labor Code Art. 41",
+        "Compensation = salary × years of service × legal coefficient",
+        "You have 90 days to file a complaint with the Labor Inspector",
+        "You have the right to a work certificate and full final settlement",
+        "Dismissal without valid reason = unfair dismissal even with notice",
+      ],
+    },
+    sections: [
+      {
+        id: "definition",
+        titleAr: "ما هو الفصل التعسفي؟",
+        titleFr: "Qu'est-ce que le licenciement abusif?",
+        titleEn: "What is Unfair Dismissal?",
+        contentAr: `الفصل التعسفي هو إنهاء عقد العمل من طرف صاحب العمل دون سبب مشروع ومقبول قانوناً، أو دون احترام الإجراءات المنصوص عليها في مدونة الشغل المغربية.
+
+وفق المادة 35 من مدونة الشغل، لا يمكن لصاحب العمل فصل أجير إلا لسبب وجيه ومشروع يتعلق بسلوكه أو أدائه المهني. عبء إثبات هذا السبب يقع على عاتق صاحب العمل وليس على الأجير.
+
+**أسباب الفصل غير المشروع:**
+- الانتماء النقابي أو ممارسة النشاط النقابي
+- الحمل أو الإجازة الأمومية
+- المرض أو الإصابة في العمل
+- رفع شكوى ضد صاحب العمل (التبليغ عن مخالفات)
+- الجنس أو الدين أو الأصل
+
+**الفرق بين الفصل التأديبي والتعسفي:**
+الفصل التأديبي مشروع إذا ارتكب الأجير خطأً جسيماً موثقاً (كالسرقة أو الغياب المتكرر). أما إذا لم يُثبت صاحب العمل الخطأ، أو كانت العقوبة غير متناسبة، فالفصل تعسفي.
+
+مثال واقعي: إلا طردك صاحب الشغل بحجة "ضرورة اقتصادية" بدون وثائق تثبت هذه الضرورة، هذا فصل تعسفي ومن حقك المطالبة بالتعويض.`,
+        contentFr: `Le licenciement abusif est la rupture du contrat de travail par l'employeur sans motif légitime et légalement acceptable, ou sans respecter les procédures prévues par le Code du Travail marocain.
+
+Selon l'article 35 du Code du Travail, l'employeur ne peut licencier un salarié que pour un motif valable lié à son comportement ou à ses performances. La charge de la preuve incombe à l'employeur, pas au salarié.
+
+**Motifs de licenciement illégaux:**
+- Appartenance syndicale ou activité syndicale
+- Grossesse ou congé maternité
+- Maladie ou accident du travail
+- Dépôt de plainte contre l'employeur
+- Sexe, religion ou origine
+
+**Différence entre licenciement disciplinaire et abusif:**
+Le licenciement disciplinaire est légitime si le salarié a commis une faute grave documentée. Sans preuve ou avec une sanction disproportionnée, il devient abusif.`,
+        contentEn: `Unfair dismissal occurs when an employer terminates an employment contract without a legitimate legal reason, or without following the procedures set out in Morocco's Labor Code.
+
+Under Article 35 of the Labor Code, an employer can only dismiss an employee for a valid reason related to their conduct or professional performance. The burden of proof lies with the employer, not the employee.
+
+**Illegal reasons for dismissal:**
+- Trade union membership or activity
+- Pregnancy or maternity leave
+- Illness or workplace injury
+- Filing a complaint against the employer
+- Gender, religion or origin
+
+**Disciplinary vs unfair dismissal:**
+Disciplinary dismissal is legitimate if the employee committed a documented serious fault. Without proof, or with a disproportionate sanction, it becomes unfair dismissal.`,
+        articleRefs: [
+          { number: "35", code: "labor_code", labelAr: "أسباب الفصل المشروع", labelFr: "Motifs légaux de licenciement", labelEn: "Legal grounds for dismissal" },
+          { number: "36", code: "labor_code", labelAr: "إجراءات الفصل التأديبي", labelFr: "Procédure disciplinaire", labelEn: "Disciplinary procedure" },
+          { number: "37", code: "labor_code", labelAr: "حق الأجير في الدفاع عن نفسه", labelFr: "Droit de défense du salarié", labelEn: "Employee's right of defense" },
+        ],
+      },
+      {
+        id: "rights",
+        titleAr: "حقوقك القانونية عند الفصل",
+        titleFr: "Vos droits légaux lors du licenciement",
+        titleEn: "Your Legal Rights Upon Dismissal",
+        contentAr: `عند فصلك تعسفياً، يكفل لك القانون المغربي جملة من الحقوق التي لا يمكن التنازل عنها:
+
+**1. تعويض الفصل (المادة 52-53)**
+يُحسب التعويض بناءً على الراتب الإجمالي وسنوات الأقدمية. لا يمكن لصاحب العمل إسقاط هذا الحق حتى لو وقّعت على وثيقة تنازل تحت الضغط.
+
+**2. أجل الإشعار (المادة 43-45)**
+يحق لك الاستفادة من أجل إشعار كافٍ قبل مغادرة العمل، أو تعويض مالي يعادله إذا طُلب منك المغادرة فوراً.
+
+**3. شهادة العمل (المادة 72)**
+حق مكفول بالقانون. يجب أن تتضمن: تاريخ الالتحاق، تاريخ المغادرة، والمنصب الوظيفي. لا يحق لصاحب العمل الامتناع عن تسليمها.
+
+**4. تسوية الحقوق الكاملة**
+تشمل: الأجر المتبقي، أيام الراحة غير المستهلكة، المنح والعلاوات المستحقة.
+
+**5. إشكالية التنازل تحت الإكراه**
+إذا أُجبرت على التوقيع على وثيقة تنازل عن حقوقك، فهذا التوقيع قابل للطعن أمام القضاء إذا ثبت الإكراه.`,
+        contentFr: `En cas de licenciement abusif, la loi marocaine vous garantit plusieurs droits auxquels vous ne pouvez pas renoncer:
+
+**1. Indemnité de licenciement (Art. 52-53)**
+Calculée sur le salaire brut et les années d'ancienneté. L'employeur ne peut pas supprimer ce droit même si vous avez signé une renonciation sous pression.
+
+**2. Préavis (Art. 43-45)**
+Droit à un préavis suffisant ou à une indemnité compensatrice si départ immédiat requis.
+
+**3. Certificat de travail (Art. 72)**
+Droit légal obligatoire incluant: date d'embauche, date de départ, poste occupé.
+
+**4. Solde de tout compte complet**
+Salaire restant, congés non pris, primes et allocations dues.`,
+        contentEn: `Upon unfair dismissal, Moroccan law guarantees you several rights that cannot be waived:
+
+**1. Severance compensation (Art. 52-53)**
+Calculated based on gross salary and years of service. The employer cannot remove this right even if you signed a waiver under pressure.
+
+**2. Notice period (Art. 43-45)**
+Right to adequate notice or financial compensation if immediate departure is required.
+
+**3. Work certificate (Art. 72)**
+A legal right that must include: start date, end date, and job title. The employer cannot refuse to provide it.
+
+**4. Full final settlement**
+Includes remaining salary, unused leave days, and any outstanding bonuses.`,
+        articleRefs: [
+          { number: "41", code: "labor_code", labelAr: "التعويض عن الفصل التعسفي", labelFr: "Indemnité de licenciement abusif", labelEn: "Unfair dismissal compensation" },
+          { number: "52", code: "labor_code", labelAr: "حساب التعويض", labelFr: "Calcul de l'indemnité", labelEn: "Compensation calculation" },
+          { number: "53", code: "labor_code", labelAr: "الأقدمية وأثرها", labelFr: "Ancienneté et son effet", labelEn: "Seniority and its effect" },
+        ],
+      },
+      {
+        id: "calculation",
+        titleAr: "كيف تُحسب التعويضات؟",
+        titleFr: "Comment calculer les indemnités?",
+        titleEn: "How is Compensation Calculated?",
+        contentAr: `يُحسب تعويض الفصل التعسفي وفق معادلة قانونية محددة في المادتين 52 و53 من مدونة الشغل.
+
+**المعادلة الأساسية:**
+- من 1 إلى 5 سنوات: 96 ساعة أجر لكل سنة
+- من 6 إلى 10 سنوات: 144 ساعة أجر لكل سنة  
+- من 11 إلى 15 سنة: 192 ساعة أجر لكل سنة
+- أكثر من 15 سنة: 240 ساعة أجر لكل سنة
+
+**مثال عملي:**
+أجير خدم 8 سنوات براتب إجمالي 8,000 درهم:
+
+- الراتب الساعي: 8,000 ÷ 191 = 41.88 درهم/ساعة
+- سنوات 1-5: 5 × 96 × 41.88 = **20,105 درهم**
+- سنوات 6-8: 3 × 144 × 41.88 = **18,092 درهم**
+- **إجمالي التعويض: 38,197 درهم**
+
+يُضاف إلى ذلك: تعويض أجل الإشعار (شهر إلى 3 أشهر حسب الفئة المهنية).
+
+احسب تعويضك الدقيق باستخدام حاسبتنا المجانية:`,
+        contentFr: `L'indemnité de licenciement se calcule selon une formule légale définie aux articles 52 et 53 du Code du Travail.
+
+**Formule de base:**
+- De 1 à 5 ans: 96 heures de salaire par année
+- De 6 à 10 ans: 144 heures par année
+- De 11 à 15 ans: 192 heures par année
+- Plus de 15 ans: 240 heures par année
+
+**Exemple pratique:**
+Salarié ayant travaillé 8 ans avec un salaire brut de 8 000 MAD:
+- Taux horaire: 8 000 ÷ 191 = 41,88 MAD/heure
+- Années 1-5: 5 × 96 × 41,88 = **20 105 MAD**
+- Années 6-8: 3 × 144 × 41,88 = **18 092 MAD**
+- **Total: 38 197 MAD**`,
+        contentEn: `Severance compensation is calculated according to a legal formula defined in Articles 52 and 53 of the Labor Code.
+
+**Basic formula:**
+- Years 1-5: 96 hours of salary per year
+- Years 6-10: 144 hours per year
+- Years 11-15: 192 hours per year
+- Over 15 years: 240 hours per year
+
+**Practical example:**
+Employee with 8 years of service, gross salary 8,000 MAD:
+- Hourly rate: 8,000 ÷ 191 = 41.88 MAD/hour
+- Years 1-5: 5 × 96 × 41.88 = **20,105 MAD**
+- Years 6-8: 3 × 144 × 41.88 = **18,092 MAD**
+- **Total compensation: 38,197 MAD**
+
+Calculate your exact compensation using our free calculator:`,
+        articleRefs: [
+          { number: "52", code: "labor_code", labelAr: "حساب التعويض", labelFr: "Calcul de l'indemnité", labelEn: "Compensation calculation" },
+          { number: "53", code: "labor_code", labelAr: "الأقدمية", labelFr: "Ancienneté", labelEn: "Seniority" },
+        ],
+      },
+      {
+        id: "procedure",
+        titleAr: "خطوات المطالبة بحقوقك",
+        titleFr: "Étapes pour faire valoir vos droits",
+        titleEn: "Steps to Claim Your Rights",
+        contentAr: `إذا تعرضت للفصل التعسفي، اتبع هذه الخطوات بالترتيب:
+
+**الخطوة 1 — اجمع الوثائق فوراً**
+قبل أي شيء: احتفظ بنسخ من عقد العمل، كشوف الراتب، أي رسائل أو إشعارات من صاحب العمل، وسجل كل المحادثات الهاتفية أو الإلكترونية ذات الصلة.
+
+**الخطوة 2 — تقدم بشكوى لمفتش الشغل (90 يوماً)**
+هذا الأجل إلزامي ولا يقبل التمديد. توجه إلى مفتش الشغل في المنطقة التي تعمل فيها. الشكوى مجانية. سيستدعي المفتش صاحب العمل لجلسة استماع.
+
+**الخطوة 3 — مرحلة الصلح**
+يحاول مفتش الشغل التوفيق بين الطرفين. إذا قبل صاحب العمل التعويض العادل، انتهت القضية. إذا رفض، يحرر المفتش محضراً بعجز الصلح.
+
+**الخطوة 4 — محكمة الشغل**
+بناءً على محضر عجز الصلح، ترفع دعوى أمام محكمة الشغل. لا تشترط المحكمة وجود محامٍ في المرحلة الأولى.
+
+**الخطوة 5 — الاستئناف**
+إذا لم يُنصفك الحكم الابتدائي، يمكن الطعن في محكمة الاستئناف خلال 30 يوماً.`,
+        contentFr: `En cas de licenciement abusif, suivez ces étapes dans l'ordre:
+
+**Étape 1 — Rassemblez les documents immédiatement**
+Conservez: contrat de travail, bulletins de paie, courriers de l'employeur, échanges écrits pertinents.
+
+**Étape 2 — Saisir l'Inspecteur du Travail (90 jours)**
+Délai impératif, non extensible. Rendez-vous à l'Inspection du Travail de votre zone. Gratuit. L'inspecteur convoquera l'employeur.
+
+**Étape 3 — Conciliation**
+L'inspecteur tente de concilier les parties. Si accord: affaire réglée. Sinon: procès-verbal de non-conciliation.
+
+**Étape 4 — Tribunal du Travail**
+Sur base du PV de non-conciliation, saisir le Tribunal. Pas d'avocat obligatoire en première instance.
+
+**Étape 5 — Appel**
+Si le jugement est défavorable: appel dans les 30 jours.`,
+        contentEn: `If you face unfair dismissal, follow these steps in order:
+
+**Step 1 — Gather documents immediately**
+Keep copies of: employment contract, pay slips, employer letters, any relevant written communications.
+
+**Step 2 — File complaint with Labor Inspector (90 days)**
+This deadline is mandatory and cannot be extended. Go to the Labor Inspection office in your work area. Free of charge. The inspector will summon your employer.
+
+**Step 3 — Conciliation attempt**
+The inspector tries to reconcile both parties. If the employer agrees to fair compensation: case closed. If not: a non-conciliation report is issued.
+
+**Step 4 — Labor Court**
+Based on the non-conciliation report, file a case at the Labor Court. No lawyer required at first instance.
+
+**Step 5 — Appeal**
+If the judgment is unfavorable: appeal within 30 days.`,
+        articleRefs: [
+          { number: "532", code: "labor_code", labelAr: "الشكوى لدى مفتش الشغل", labelFr: "Plainte auprès de l'Inspecteur", labelEn: "Labor Inspector complaint" },
+          { number: "533", code: "labor_code", labelAr: "مسطرة الصلح", labelFr: "Procédure de conciliation", labelEn: "Conciliation procedure" },
+        ],
+      },
+      {
+        id: "lawyer",
+        titleAr: "متى تحتاج محامياً؟",
+        titleFr: "Quand avez-vous besoin d'un avocat?",
+        titleEn: "When Do You Need a Lawyer?",
+        contentAr: `ليس كل قضية فصل تعسفي تحتاج محامياً. إليك الدليل العملي:
+
+**يمكنك التصرف بنفسك إذا:**
+- الفصل واضح وموثق (لا خلاف على الوقائع)
+- التعويض المطلوب في حدود معقولة
+- صاحب العمل مستعد للتفاوض
+- القضية أمام مفتش الشغل فقط
+
+**تحتاج محامياً إذا:**
+- الوقائع متنازع عليها وصاحب العمل ينكر الفصل
+- مبلغ التعويض كبير (أكثر من 50,000 درهم)
+- يتعلق الأمر بفصل جماعي أو إعادة هيكلة
+- ادعاءات تمييز (جنس، دين، نقابة)
+- تأخرت في رفع الشكوى وتحتاج طعناً في التقادم
+
+**تكلفة المحامي في قضايا الشغل بالمغرب:**
+- استشارة أولى: 300-800 درهم
+- تمثيل أمام المفتش والمحكمة: 3,000-10,000 درهم حسب تعقيد القضية
+- بعض المحامين يقبلون الدفع بعد كسب القضية (نسبة من التعويض)`,
+        contentFr: `Toutes les affaires de licenciement abusif ne nécessitent pas un avocat:
+
+**Vous pouvez agir seul si:**
+- Les faits sont clairs et documentés
+- L'indemnité demandée est raisonnable
+- L'employeur est prêt à négocier
+
+**Vous avez besoin d'un avocat si:**
+- Les faits sont contestés
+- Le montant est important (plus de 50 000 MAD)
+- Licenciement collectif ou restructuration
+- Discrimination alléguée
+
+**Honoraires en droit du travail au Maroc:**
+- Consultation: 300-800 MAD
+- Représentation complète: 3 000-10 000 MAD`,
+        contentEn: `Not every unfair dismissal case requires a lawyer:
+
+**You can act alone if:**
+- The dismissal is clear and documented
+- The compensation sought is reasonable
+- The employer is willing to negotiate
+
+**You need a lawyer if:**
+- Facts are disputed by the employer
+- Large amounts involved (over 50,000 MAD)
+- Collective dismissal or restructuring
+- Discrimination claims
+
+**Lawyer fees for labor cases in Morocco:**
+- Initial consultation: 300-800 MAD
+- Full representation: 3,000-10,000 MAD`,
+      },
+    ],
+    faqs: [
+      {
+        questionAr: "هل يحق لصاحب العمل فصلي بدون سبب؟",
+        questionFr: "L'employeur peut-il me licencier sans raison?",
+        questionEn: "Can my employer dismiss me without reason?",
+        answerAr: "لا. يجب على صاحب العمل إثبات سبب مشروع للفصل وفق المادة 35 من مدونة الشغل. عبء الإثبات عليه هو وليس عليك. إذا عجز عن الإثبات اعتُبر الفصل تعسفياً ويستحق التعويض الكامل.",
+        answerFr: "Non. L'employeur doit prouver un motif valable selon l'Art. 35 CT. La charge de la preuve lui incombe. Sans preuve, le licenciement est abusif et ouvre droit à indemnisation.",
+        answerEn: "No. The employer must prove a valid reason under Article 35 of the Labor Code. The burden of proof lies with the employer. Without proof, the dismissal is unfair and entitles you to full compensation.",
+      },
+      {
+        questionAr: "كم مدة التقادم لرفع دعوى الفصل التعسفي؟",
+        questionFr: "Quel est le délai de prescription?",
+        questionEn: "What is the statute of limitations?",
+        answerAr: "90 يوماً للشكوى لدى مفتش الشغل من تاريخ الفصل — هذا الأجل إلزامي لا يقبل التمديد. أما رفع الدعوى أمام محكمة الشغل مباشرة فالتقادم سنتان.",
+        answerFr: "90 jours pour saisir l'Inspecteur du Travail — délai impératif. Pour saisir directement le Tribunal du Travail: 2 ans.",
+        answerEn: "90 days to file with the Labor Inspector from dismissal date — mandatory, cannot be extended. To file directly with the Labor Court: 2 years.",
+      },
+      {
+        questionAr: "هل أستحق تعويضاً إذا استقلت أنا؟",
+        questionFr: "Ai-je droit à une indemnité si je démissionne?",
+        questionEn: "Am I entitled to compensation if I resign?",
+        answerAr: "في الأصل لا. لكن إذا كنت مضطراً للاستقالة بسبب ظروف أوجدها صاحب العمل — كعدم دفع الراتب أو التحرش أو تغيير الوظيفة قسراً — فهذا ما يُسمى الإكراه على الاستقالة ويعطيك نفس حقوق الفصل التعسفي.",
+        answerFr: "En principe non. Mais si vous êtes contraint de démissionner à cause de l'employeur (impayés, harcèlement, modification forcée du poste), c'est une démission forcée assimilée au licenciement abusif.",
+        answerEn: "In principle no. But if you are forced to resign due to circumstances created by the employer — unpaid salary, harassment, forced job change — this is constructive dismissal and gives you the same rights as unfair dismissal.",
+      },
+      {
+        questionAr: "ماذا أفعل إذا رفض صاحب العمل إعطائي شهادة العمل؟",
+        questionFr: "Que faire si l'employeur refuse le certificat de travail?",
+        questionEn: "What if my employer refuses to give me a work certificate?",
+        answerAr: "شهادة العمل حق قانوني مكفول بالمادة 72 من مدونة الشغل. إذا رفض صاحب العمل: 1) تقدم بشكوى لمفتش الشغل 2) ارفع دعوى أمام محكمة الشغل. صاحب العمل يتعرض لغرامة مالية بين 300 و500 درهم عن كل رفض.",
+        answerFr: "Certificat de travail garanti par Art. 72 CT. En cas de refus: saisir l'Inspecteur du Travail ou le Tribunal. Amende de 300 à 500 MAD pour l'employeur récalcitrant.",
+        answerEn: "The work certificate is a legal right under Article 72 of the Labor Code. If refused: file with the Labor Inspector or Labor Court. The employer faces a fine of 300-500 MAD per refusal.",
       },
     ],
   },
