@@ -148,6 +148,12 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
             dict={dict}
             onArticleClick={setModalArticle}
           />
+          <a
+            href="/guides/droits-licenciement-maroc"
+            className="text-sm text-green-700 hover:underline block mt-3"
+          >
+            📖 اقرأ دليلنا الشامل حول حقوق الفصل ←
+          </a>
 
           {/* Zone 5: Related Calculators */}
           <div className="mt-6">
