@@ -9,6 +9,7 @@ const state = {
   totalPages: 0,
   pdfBase64: null,
   lawCode: () => document.getElementById('law-code-select').value,
+  provider: () => document.getElementById('api-provider-select').value,
   issues: [],
   editDirty: false,
 };
@@ -17,6 +18,38 @@ const state = {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pdf-upload').addEventListener('change', onPdfUpload);
   document.addEventListener('keydown', onKeyDown);
+
+  // PDF panel drag-to-resize from left edge
+  const handle = document.getElementById('pdf-resize-handle');
+  const pdfPanel = document.getElementById('panel-pdf');
+  let resizing = false, startX = 0, startW = 0;
+  handle.addEventListener('mousedown', (e) => {
+    resizing = true;
+    startX = e.clientX;
+    startW = pdfPanel.offsetWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!resizing) return;
+    const delta = startX - e.clientX; // dragging left = wider
+    const newW = Math.min(window.innerWidth * 0.7, Math.max(240, startW + delta));
+    pdfPanel.style.width = newW + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!resizing) return;
+    resizing = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+  let _wheelTimer = null;
+  document.getElementById('pdf-viewport').addEventListener('wheel', (e) => {
+    if (!state.pdfBase64) return;
+    e.preventDefault();
+    if (_wheelTimer) return; // debounce — one page per 400ms
+    _wheelTimer = setTimeout(() => { _wheelTimer = null; }, 400);
+    changePage(e.deltaY > 0 ? 1 : -1);
+  }, { passive: false });
 });
 
 // ── PDF Upload ────────────────────────────────────────────────────────────
@@ -40,31 +73,86 @@ async function onPdfUpload(e) {
 }
 
 // ── Extract ───────────────────────────────────────────────────────────────
+let _pendingExtractResult = null;
+
+function _providerLabel(provider) {
+  if (provider === 'openai') return 'OpenAI GPT-4o';
+  if (provider === 'none')   return 'No AI';
+  return 'Claude Sonnet';
+}
+
 async function extractArticles() {
   if (!state.pdfBase64) { toast('Upload a PDF first', 'warn'); return; }
-  showLoading('Extracting articles with Claude…');
+  const provider = state.provider();
+  const label = _providerLabel(provider);
+  showLoading(`[${label}] Extracting article structure…`);
+
+  const pollId = setInterval(async () => {
+    try {
+      const p = await get('/extract/progress');
+      if (p.status === 'running') {
+        const msg = p.total > 0
+          ? `[${label}] Cleaning: ${p.done} / ${p.total} articles`
+          : `[${label}] ${p.message || 'Analyzing document…'}`;
+        document.getElementById('loading-msg').textContent = msg;
+      }
+    } catch (_) {}
+  }, 1500);
+
   try {
     const res = await post('/extract', {
       pdf_base64: state.pdfBase64,
       lawCode: state.lawCode(),
+      apiProvider: provider,
     });
-    state.articles = res.articles || [];
-    state.issues = res.issues || [];
-    state.totalPages = res.pageCount || state.totalPages;
 
-    // Fetch DB versions for all articles
-    await loadDbArticles();
+    if (res.interrupted) {
+      _pendingExtractResult = res;
+      const cleaned = res.articles.filter(a => a.quality !== 'needs_review').length;
+      document.getElementById('rate-limit-msg').innerHTML =
+        `API rate limit was reached during cleaning.<br><br>` +
+        `<strong>${cleaned} / ${res.articles.length}</strong> articles were cleaned before the limit hit.<br>` +
+        `The rest have their raw extracted text.<br><br>` +
+        `You can continue with the raw text, or change the API provider and re-extract.`;
+      document.getElementById('rate-limit-modal').style.display = 'flex';
+      return;
+    }
 
+    _applyExtractResult(res, label);
+  } catch (err) {
+    toast('Extraction failed: ' + err.message, 'error');
+  } finally {
+    clearInterval(pollId);
+    hideLoading();
+  }
+}
+
+function _applyExtractResult(res, label) {
+  state.articles = res.articles || [];
+  state.issues = res.issues || [];
+  state.totalPages = res.pageCount || state.totalPages;
+  loadDbArticles().then(() => {
     renderArticleList();
     renderIssues();
     updateProgress();
     if (state.articles.length) selectArticle(0);
-    toast(`Extracted ${state.articles.length} articles`, 'success');
-  } catch (err) {
-    toast('Extraction failed: ' + err.message, 'error');
-  } finally {
-    hideLoading();
+  });
+  const lbl = label || _providerLabel(state.provider());
+  toast(`[${lbl}] Extracted ${state.articles.length} articles`, 'success');
+}
+
+function continueWithoutAI() {
+  if (_pendingExtractResult) {
+    _applyExtractResult(_pendingExtractResult, 'Partial');
+    _pendingExtractResult = null;
   }
+  document.getElementById('rate-limit-modal').style.display = 'none';
+}
+
+function closeRateLimitModal() {
+  _pendingExtractResult = null;
+  document.getElementById('rate-limit-modal').style.display = 'none';
+  toast('Change API provider in the header, then re-extract.', 'warn');
 }
 
 // ── DB articles ───────────────────────────────────────────────────────────
@@ -163,10 +251,10 @@ async function selectArticle(idx) {
   // Highlight active in list
   renderArticleList();
 
-  // Jump PDF to article page if we can estimate
+  // Jump PDF to article's actual start page
   if (state.totalPages > 0) {
-    const estPage = Math.max(1, Math.round((idx / state.articles.length) * state.totalPages));
-    await loadPdfPage(estPage);
+    const page = a.startPage || Math.max(1, Math.round((idx / state.articles.length) * state.totalPages));
+    await loadPdfPage(page);
   }
 }
 
@@ -297,17 +385,32 @@ async function loadPdfPage(page) {
     const placeholder = document.querySelector('.pdf-placeholder');
     img.src = `data:image/png;base64,${res.image}`;
     img.style.display = 'block';
+    img.style.width = `${pdfZoom * 100}%`;
+    img.style.transform = '';
     if (placeholder) placeholder.style.display = 'none';
     state.currentPage = page;
     state.totalPages = res.total;
     document.getElementById('pdf-page-info').textContent =
       `Page ${page} / ${res.total}`;
+    document.getElementById('zoom-label').textContent = Math.round(pdfZoom * 100) + '%';
   } catch (_) { /* no PDF loaded */ }
 }
 
 function changePage(delta) {
   const newPage = state.currentPage + delta;
   if (newPage >= 1 && newPage <= state.totalPages) loadPdfPage(newPage);
+}
+
+const PDF_DEFAULT_ZOOM = 0.65;
+let pdfZoom = PDF_DEFAULT_ZOOM;
+
+function zoomPdf(delta) {
+  if (delta === 0) { pdfZoom = PDF_DEFAULT_ZOOM; }
+  else { pdfZoom = Math.min(4, Math.max(0.25, pdfZoom + delta)); }
+  const img = document.getElementById('pdf-page-img');
+  img.style.width = `${pdfZoom * 100}%`;
+  img.style.transform = '';
+  document.getElementById('zoom-label').textContent = Math.round(pdfZoom * 100) + '%';
 }
 
 // ── Progress ──────────────────────────────────────────────────────────────

@@ -3,6 +3,11 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
+_env_path = Path(__file__).parent / ".env"
+print(f"[DEBUG] Loading .env from: {_env_path} (exists: {_env_path.exists()})")
+load_dotenv(_env_path)
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +28,7 @@ session: dict = {
     "page_count": 0,
     "law_code": None,
     "articles": [],
+    "progress": {"done": 0, "total": 0, "status": "idle", "message": ""},
 }
 
 
@@ -31,6 +37,7 @@ session: dict = {
 class ExtractRequest(BaseModel):
     pdf_base64: str
     lawCode: str
+    apiProvider: str = "claude"  # "claude" or "openai"
 
 
 class LoadPdfRequest(BaseModel):
@@ -73,12 +80,19 @@ def load_pdf(req: LoadPdfRequest):
     except Exception:
         raise HTTPException(400, "Invalid base64 PDF data")
 
-    raw_text, page_count = extractor.extract_text_from_pdf(pdf_bytes)
+    import pdfplumber, io as _io
+    with pdfplumber.open(_io.BytesIO(pdf_bytes)) as pdf:
+        page_count = len(pdf.pages)
     session["pdf_bytes"] = pdf_bytes
     session["page_count"] = page_count
     session["articles"] = []
 
-    return {"pageCount": page_count, "textLength": len(raw_text)}
+    return {"pageCount": page_count, "textLength": len(pdf_bytes)}
+
+
+@app.get("/extract/progress")
+def extract_progress():
+    return session["progress"]
 
 
 @app.post("/extract")
@@ -88,16 +102,43 @@ def extract(req: ExtractRequest):
     except Exception:
         raise HTTPException(400, "Invalid base64 PDF data")
 
+    provider = req.apiProvider if req.apiProvider in ("claude", "openai", "none") else "claude"
     session["pdf_bytes"] = pdf_bytes
     session["law_code"] = req.lawCode
+    session["progress"] = {"done": 0, "total": 0, "status": "running", "message": f"جارٍ تحليل الوثيقة ({provider})...", "provider": provider}
 
-    articles, page_count = extractor.extract_from_pdf(pdf_bytes)
+    def on_progress(done: int, total: int, message: str):
+        session["progress"] = {"done": done, "total": total, "status": "running", "message": message, "provider": provider}
+
+    try:
+        articles, page_count, interrupted, interrupt_reason = extractor.extract_all_articles(
+            pdf_bytes, progress_callback=on_progress, provider=provider
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        session["progress"] = {"done": 0, "total": 0, "status": "error", "message": str(e)}
+        raise HTTPException(500, str(e))
+
     session["page_count"] = page_count
+    status = "interrupted" if interrupted else "done"
+    session["progress"] = {
+        "done": len(articles), "total": len(articles),
+        "status": status,
+        "message": interrupt_reason or f"اكتمل — {len(articles)} مادة",
+        "provider": provider,
+    }
 
     issues = validator.validate(articles, req.lawCode)
     session["articles"] = articles
 
-    return {"articles": articles, "issues": issues, "pageCount": page_count}
+    return {
+        "articles": articles,
+        "issues": issues,
+        "pageCount": page_count,
+        "interrupted": interrupted,
+        "interruptReason": interrupt_reason,
+    }
 
 
 @app.get("/db/articles/{law_code}")
@@ -191,3 +232,16 @@ def get_pdf_page(page_number: int):
 @app.get("/session/articles")
 def get_session_articles():
     return {"articles": session["articles"], "lawCode": session["law_code"]}
+
+
+@app.get("/debug/raw-text")
+def debug_raw_text():
+    if session["pdf_bytes"] is None:
+        raise HTTPException(400, "No PDF loaded — upload a PDF first via the UI")
+    articles, page_count = extractor.extract_with_pdfplumber(session["pdf_bytes"])
+    sample = articles[0]["text"][:500] if articles else ""
+    return {
+        "page_count": page_count,
+        "articles_found": len(articles),
+        "first_article_preview": sample,
+    }

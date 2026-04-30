@@ -33,6 +33,11 @@
       <option value="commerce_code">commerce_code</option>
       <option value="urbanism_code">urbanism_code</option>
     </select>
+    <select id="api-provider-select" title="Extraction API">
+      <option value="claude">🤖 Claude</option>
+      <option value="openai">🟢 OpenAI</option>
+      <option value="none">🚫 No AI cleaning</option>
+    </select>
     <label class="btn btn-primary" for="pdf-upload">Upload PDF</label>
     <input type="file" id="pdf-upload" accept=".pdf" style="display:none" />
   </div>
@@ -41,21 +46,7 @@
 <!-- ── Main 3-panel layout ────────────────────────────────────────────────── -->
 <main class="app-main">
 
-  <!-- Panel 1: PDF Viewer -->
-  <section class="panel panel-pdf" id="panel-pdf">
-    <div class="panel-header">PDF Viewer</div>
-    <div class="pdf-viewport" id="pdf-viewport">
-      <div class="pdf-placeholder">Upload a PDF to begin</div>
-      <img id="pdf-page-img" src="" alt="PDF page" style="display:none" />
-    </div>
-    <div class="pdf-nav">
-      <button class="btn btn-icon" id="pdf-prev" onclick="changePage(-1)">&#9664;</button>
-      <span id="pdf-page-info">Page — / —</span>
-      <button class="btn btn-icon" id="pdf-next" onclick="changePage(1)">&#9654;</button>
-    </div>
-  </section>
-
-  <!-- Panel 2: Articles list -->
+  <!-- Panel 1: Articles list (leftmost in LTR = rightmost in RTL → appears on LEFT) -->
   <section class="panel panel-articles" id="panel-articles">
     <div class="panel-header">Articles</div>
 
@@ -87,7 +78,7 @@
     </div>
   </section>
 
-  <!-- Panel 3: Editor -->
+  <!-- Panel 2: Editor (middle) -->
   <section class="panel panel-editor" id="panel-editor">
     <div class="panel-header">Editor</div>
 
@@ -127,12 +118,45 @@
     <div id="editor-empty" class="empty-state">Select an article to review</div>
   </section>
 
+  <!-- Panel 3: PDF Viewer (last in RTL = appears on RIGHT) -->
+  <section class="panel panel-pdf" id="panel-pdf">
+    <div class="pdf-resize-handle" id="pdf-resize-handle"></div>
+    <div class="panel-header">PDF Viewer</div>
+    <div class="pdf-viewport" id="pdf-viewport">
+      <div class="pdf-placeholder">Upload a PDF to begin</div>
+      <img id="pdf-page-img" src="" alt="PDF page" style="display:none" />
+    </div>
+    <div class="pdf-nav">
+      <button class="btn btn-icon" id="pdf-prev" onclick="changePage(-1)">&#9664;</button>
+      <span id="pdf-page-info">Page — / —</span>
+      <button class="btn btn-icon" id="pdf-next" onclick="changePage(1)">&#9654;</button>
+      <div class="pdf-zoom-controls">
+        <button class="btn btn-icon" onclick="zoomPdf(-0.25)" title="Zoom out">−</button>
+        <span id="zoom-label" style="font-size:11px;min-width:36px;text-align:center">100%</span>
+        <button class="btn btn-icon" onclick="zoomPdf(+0.25)" title="Zoom in">+</button>
+        <button class="btn btn-icon" onclick="zoomPdf(0)" title="Reset zoom">⊙</button>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- Loading overlay -->
 <div id="loading-overlay" class="loading-overlay" style="display:none">
   <div class="spinner"></div>
   <div id="loading-msg">Extracting articles with Claude...</div>
+</div>
+
+<!-- Rate limit modal -->
+<div id="rate-limit-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">⚠️ API Rate Limit Reached</div>
+    <div id="rate-limit-msg" class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="continueWithoutAI()">Continue without AI correction</button>
+      <button class="btn" onclick="closeRateLimitModal()">Change API provider</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast notifications -->

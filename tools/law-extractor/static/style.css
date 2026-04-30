@@ -37,6 +37,7 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   gap: 12px;
+  direction: ltr;
 }
 
 .logo {
@@ -84,6 +85,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  direction: ltr;
 }
 
 .panel {
@@ -94,9 +96,9 @@ body {
   overflow: hidden;
 }
 
-.panel-pdf      { width: 260px; flex-shrink: 0; }
-.panel-articles { width: 280px; flex-shrink: 0; }
-.panel-editor   { flex: 1; min-width: 0; border-right: none; }
+.panel-articles { width: 220px; min-width: 160px; flex-shrink: 0; }
+.panel-editor   { flex: 1; min-width: 0; }
+.panel-pdf      { width: 40%; min-width: 280px; flex-shrink: 0; border-right: none; position: relative; }
 
 .panel-header {
   padding: 10px 14px;
@@ -108,6 +110,17 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+
+/* ── PDF resize handle ────────────────────────────────────────────────────── */
+.pdf-resize-handle {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 10;
+}
+.pdf-resize-handle:hover { background: var(--blue); opacity: 0.5; }
 
 /* ── PDF Panel ────────────────────────────────────────────────────────────── */
 .pdf-viewport {
@@ -127,9 +140,17 @@ body {
 }
 
 #pdf-page-img {
-  max-width: 100%;
-  height: auto;
   display: block;
+  transform-origin: top center;
+  transition: transform 0.15s ease;
+  max-width: none; /* zoom overrides this */
+  height: auto;
+}
+
+.pdf-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .pdf-nav {
@@ -477,6 +498,49 @@ select { cursor: pointer; }
   text-align: center;
   color: var(--muted);
   font-size: 13px;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.modal-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  direction: ltr;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+.modal-body {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 /* ── Scrollbars ───────────────────────────────────────────────────────────── */
