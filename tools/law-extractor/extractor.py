@@ -64,13 +64,15 @@ _FASL_CLEAN  = re.compile(r"^الفصل\s*(\d+)")
 _FASL_FLEX   = re.compile(r"^ا?\s?ل?\s?ف\s?ص\s?ل\s*(\d+)")
 
 # ── Hierarchy patterns ────────────────────────────────────────────────────────
+# Each pattern matches both with-ال and without-ال prefix (e.g. باب تمهيدي).
+# The chapter pattern keeps (?!\d) so "الفصل 5" stays as article, not header.
 
 _HIERARCHY_AR = [
-    ("book",    re.compile(r"^الكتاب\s")),
-    ("part",    re.compile(r"^القسم\s")),
-    ("title",   re.compile(r"^الباب\s")),
+    ("book",    re.compile(r"^(الكتاب|كتاب)\s")),
+    ("part",    re.compile(r"^(القسم|قسم)\s")),
+    ("title",   re.compile(r"^(الباب|باب)\s")),
     ("chapter", re.compile(r"^(الفصل|فصل)\s+(?!\d)")),
-    ("section", re.compile(r"^(فرع|الفرع)\s")),
+    ("section", re.compile(r"^(الفرع|فرع)\s")),
 ]
 
 
@@ -226,9 +228,11 @@ def split_into_articles(lines: list[str], ar_mode: str) -> list[dict]:
     current: Optional[dict] = None
     skip = True
     current_page = 1
+    i = 0
 
-    for line in lines:
-        s = line.strip()
+    while i < len(lines):
+        s = lines[i].strip()
+        i += 1
 
         # Page marker
         pm = _PAGE_MARKER.match(s)
@@ -254,7 +258,23 @@ def split_into_articles(lines: list[str], ar_mode: str) -> list[dict]:
 
         struct = _detect_structure(s)
         if struct:
-            hierarchy.update(struct[0], struct[1])
+            # Peek ahead to join continuation lines into the hierarchy label.
+            # Arabic PDFs frequently split long titles across text blocks.
+            # Stop peeking at: blank lines, page markers, noise, new structural
+            # elements, or article headers — those are never continuations.
+            label = s
+            while i < len(lines):
+                nxt = lines[i].strip()
+                if (not nxt
+                        or _is_noise(nxt)
+                        or _TOC_SENTINEL.search(nxt)
+                        or _PAGE_MARKER.match(nxt)
+                        or _is_article_header(nxt, ar_mode) is not None
+                        or _detect_structure(nxt)):
+                    break
+                label = label + " " + nxt
+                i += 1
+            hierarchy.update(struct[0], label)
             continue
 
         if skip:

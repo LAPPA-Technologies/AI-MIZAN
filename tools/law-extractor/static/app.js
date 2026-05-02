@@ -2,13 +2,15 @@
 
 // ── State ─────────────────────────────────────────────────────────────────
 const state = {
-  articles: [],       // extracted articles with session status
-  dbArticles: {},     // map articleNumber → db article
+  articles: [],
+  dbArticles: {},
   currentIndex: -1,
   currentPage: 1,
   totalPages: 0,
   pdfBase64: null,
   pdfFileName: '',
+  reviewerName: '',
+  pendingSessionData: null,   // holds restored session until user confirms
   lawCode: () => document.getElementById('law-code-select').value,
   provider: () => document.getElementById('api-provider-select').value,
   issues: [],
@@ -16,7 +18,7 @@ const state = {
 };
 
 // ── Boot ──────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('pdf-upload').addEventListener('change', onPdfUpload);
   document.addEventListener('keydown', onKeyDown);
 
@@ -25,15 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const pdfPanel = document.getElementById('panel-pdf');
   let resizing = false, startX = 0, startW = 0;
   handle.addEventListener('mousedown', (e) => {
-    resizing = true;
-    startX = e.clientX;
-    startW = pdfPanel.offsetWidth;
+    resizing = true; startX = e.clientX; startW = pdfPanel.offsetWidth;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   });
   document.addEventListener('mousemove', (e) => {
     if (!resizing) return;
-    const delta = startX - e.clientX; // dragging left = wider
+    const delta = startX - e.clientX;
     const newW = Math.min(window.innerWidth * 0.7, Math.max(240, startW + delta));
     pdfPanel.style.width = newW + 'px';
   });
@@ -47,11 +47,92 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pdf-viewport').addEventListener('wheel', (e) => {
     if (!state.pdfBase64) return;
     e.preventDefault();
-    if (_wheelTimer) return; // debounce — one page per 400ms
+    if (_wheelTimer) return;
     _wheelTimer = setTimeout(() => { _wheelTimer = null; }, 400);
     changePage(e.deltaY > 0 ? 1 : -1);
   }, { passive: false });
+
+  // Check identity first; session check happens after identity is confirmed
+  await checkIdentity();
 });
+
+// ── Identity ──────────────────────────────────────────────────────────────
+async function checkIdentity() {
+  try {
+    const res = await get('/session/identity');
+    if (res.name) {
+      state.reviewerName = res.name;
+      showReviewerBadge(res.name);
+      await checkSession();
+    } else {
+      document.getElementById('identity-modal').style.display = 'flex';
+      document.getElementById('identity-input').focus();
+    }
+  } catch (_) {
+    // Server not reachable yet — show identity modal anyway
+    document.getElementById('identity-modal').style.display = 'flex';
+  }
+}
+
+async function submitIdentity() {
+  const name = document.getElementById('identity-input').value.trim();
+  if (!name) { toast('Please enter your name', 'warn'); return; }
+  try {
+    await post('/session/identity', { name });
+    state.reviewerName = name;
+    showReviewerBadge(name);
+    document.getElementById('identity-modal').style.display = 'none';
+    await checkSession();
+  } catch (err) {
+    toast('Failed to set identity: ' + err.message, 'error');
+  }
+}
+
+function showReviewerBadge(name) {
+  const badge = document.getElementById('reviewer-badge');
+  badge.textContent = name;
+  badge.style.display = 'inline-block';
+}
+
+// ── Session restore ───────────────────────────────────────────────────────
+async function checkSession() {
+  try {
+    const res = await get(`/session/load/${state.lawCode()}`);
+    if (res.articles && res.articles.length > 0) {
+      state.pendingSessionData = res;
+      const msg = `Session found: ${res.total} articles, ${res.approved} approved, ${res.rejected} rejected.`;
+      document.getElementById('session-banner-msg').textContent = msg;
+      document.getElementById('session-banner').style.display = 'flex';
+    }
+  } catch (_) { /* no saved session — normal first run */ }
+}
+
+function continueSession() {
+  if (!state.pendingSessionData) return;
+  const res = state.pendingSessionData;
+  state.articles = res.articles;
+  state.issues = [];
+  state.pendingSessionData = null;
+  document.getElementById('session-banner').style.display = 'none';
+  loadDbArticles().then(() => {
+    renderArticleList();
+    renderIssues();
+    updateProgress();
+    if (state.articles.length) selectArticle(0);
+  });
+  toast(`Session restored: ${res.total} articles`, 'success');
+}
+
+function extractFresh() {
+  state.pendingSessionData = null;
+  document.getElementById('session-banner').style.display = 'none';
+  toast('Upload a PDF and click Extract from PDF', 'info');
+}
+
+function dismissSessionBanner() {
+  state.pendingSessionData = null;
+  document.getElementById('session-banner').style.display = 'none';
+}
 
 // ── PDF Upload ────────────────────────────────────────────────────────────
 async function onPdfUpload(e) {
@@ -163,12 +244,8 @@ async function loadDbArticles() {
   try {
     const res = await get(`/db/articles/${state.lawCode()}`);
     state.dbArticles = {};
-    (res.articles || []).forEach(a => {
-      state.dbArticles[a.article_number] = a;
-    });
-  } catch (_) {
-    // DB might not be configured — silently ignore
-  }
+    (res.articles || []).forEach(a => { state.dbArticles[a.article_number] = a; });
+  } catch (_) {}
 }
 
 // ── Article list rendering ────────────────────────────────────────────────
@@ -190,7 +267,7 @@ function renderArticleList() {
     return;
   }
 
-  list.innerHTML = filtered.map((a, idx) => {
+  list.innerHTML = filtered.map((a) => {
     const realIdx = state.articles.indexOf(a);
     const icon = statusIcon(a);
     const qClass = `q-${a.quality}`;
@@ -226,9 +303,9 @@ async function selectArticle(idx) {
   document.getElementById('editor-empty').style.display = 'none';
   document.getElementById('edit-article-num').value = a.articleNumber;
   document.getElementById('edit-text').value = a.text || '';
-  document.getElementById('edit-book').value = a.book || '';
-  document.getElementById('edit-part').value = a.part || '';
-  document.getElementById('edit-title').value = a.title || '';
+  document.getElementById('edit-book').value    = a.book    || '';
+  document.getElementById('edit-part').value    = a.part    || '';
+  document.getElementById('edit-title').value   = a.title   || '';
   document.getElementById('edit-chapter').value = a.chapter || '';
   document.getElementById('edit-section').value = a.section || '';
 
@@ -239,7 +316,7 @@ async function selectArticle(idx) {
   qb.textContent = q;
   qb.className = `badge badge-${q}`;
 
-  // DB version
+  // DB version diff
   const dbA = state.dbArticles[a.articleNumber];
   const dbDisplay = document.getElementById('db-text-display');
   const dbBadge = document.getElementById('db-diff-badge');
@@ -251,13 +328,9 @@ async function selectArticle(idx) {
     dbBadge.textContent = '(not in DB)';
   }
 
-  // Save button state
   document.getElementById('btn-save').disabled = true;
-
-  // Highlight active in list
   renderArticleList();
 
-  // Jump PDF to article's actual start page
   if (state.totalPages > 0) {
     const page = a.startPage || Math.max(1, Math.round((idx / state.articles.length) * state.totalPages));
     await loadPdfPage(page);
@@ -287,6 +360,10 @@ function saveEdit() {
 // ── Approve ───────────────────────────────────────────────────────────────
 async function approveArticle() {
   if (state.currentIndex < 0) return;
+  if (!state.reviewerName) {
+    toast('Set your reviewer name first (reload page)', 'warn');
+    return;
+  }
   if (state.editDirty) saveEdit();
   const a = state.articles[state.currentIndex];
   try {
@@ -294,6 +371,7 @@ async function approveArticle() {
       lawCode:        state.lawCode(),
       articleNumber:  a.articleNumber,
       text:           a.text,
+      reviewerName:   state.reviewerName,
       book:           a.book           || null,
       part:           a.part           || null,
       title:          a.title          || null,
@@ -307,28 +385,49 @@ async function approveArticle() {
     a.quality = 'clean';
     renderArticleList();
     updateProgress();
-    toast(`Art. ${a.articleNumber} approved ✓`, 'success');
+    toast(`Art. ${a.articleNumber} approved`, 'success');
     advanceToNext();
   } catch (err) {
     toast('Approve failed: ' + err.message, 'error');
   }
 }
 
-// ── Reject ────────────────────────────────────────────────────────────────
-async function rejectArticle() {
+// ── Reject modal ──────────────────────────────────────────────────────────
+function openRejectModal() {
+  if (state.currentIndex < 0) return;
+  if (!state.reviewerName) {
+    toast('Set your reviewer name first (reload page)', 'warn');
+    return;
+  }
+  document.getElementById('reject-category').value = 'encoding_error';
+  document.getElementById('reject-notes').value = '';
+  document.getElementById('reject-modal').style.display = 'flex';
+}
+
+function closeRejectModal() {
+  document.getElementById('reject-modal').style.display = 'none';
+}
+
+async function submitReject() {
   if (state.currentIndex < 0) return;
   const a = state.articles[state.currentIndex];
-  const reason = prompt('Rejection reason (optional):') || '';
+  const category = document.getElementById('reject-category').value;
+  const notes = document.getElementById('reject-notes').value.trim();
+  closeRejectModal();
   try {
     await post('/db/reject', {
-      lawCode: state.lawCode(),
-      articleNumber: a.articleNumber,
-      reason,
+      lawCode:           state.lawCode(),
+      articleNumber:     a.articleNumber,
+      reviewerName:      state.reviewerName,
+      rejectionCategory: category,
+      reason:            notes || null,
     });
     a.status = 'rejected';
+    a.rejectionCategory = category;
+    a.rejectionReason = notes || null;
     renderArticleList();
     updateProgress();
-    toast(`Art. ${a.articleNumber} rejected`, 'warn');
+    toast(`Art. ${a.articleNumber} rejected (${category})`, 'warn');
     advanceToNext();
   } catch (err) {
     toast('Reject failed: ' + err.message, 'error');
@@ -349,30 +448,58 @@ function nextIssue() {
     (a, i) => i >= start && (a.quality === 'needs_review' || a.quality === 'corrupted')
   );
   if (found < 0) {
-    found = state.articles.findIndex(
-      (a) => a.quality === 'needs_review' || a.quality === 'corrupted'
-    );
+    found = state.articles.findIndex(a => a.quality === 'needs_review' || a.quality === 'corrupted');
   }
   if (found >= 0) selectArticle(found);
   else toast('No more issues', 'success');
 }
 
-// ── Import batch ──────────────────────────────────────────────────────────
-async function importApproved() {
+// ── Push to Neon DB ───────────────────────────────────────────────────────
+function pushToNeonDB() {
   const approved = state.articles.filter(a => a.status === 'approved');
-  if (approved.length === 0) { toast('No approved articles to import', 'warn'); return; }
-  if (!confirm(`Import ${approved.length} approved articles to the DB?`)) return;
-  showLoading(`Importing ${approved.length} articles…`);
+  if (approved.length === 0) { toast('No approved articles to push', 'warn'); return; }
+  if (!state.reviewerName) { toast('Reviewer name required', 'warn'); return; }
+
+  const body = document.getElementById('push-modal-body');
+  body.innerHTML =
+    `You are about to push <strong>${approved.length}</strong> articles to the ` +
+    `production Neon database. This cannot be undone.<br><br>` +
+    `Reviewed by: <strong>${escHtml(state.reviewerName)}</strong><br>` +
+    `Law code: <strong>${escHtml(state.lawCode())}</strong>`;
+
+  document.getElementById('push-confirm-input').value = '';
+  document.getElementById('btn-push-confirm').disabled = true;
+  document.getElementById('push-modal').style.display = 'flex';
+}
+
+function closePushModal() {
+  document.getElementById('push-modal').style.display = 'none';
+}
+
+async function executePush() {
+  closePushModal();
+  const approved = state.articles.filter(a => a.status === 'approved');
+  showLoading(`Pushing ${approved.length} articles to Neon DB…`);
   try {
     const res = await post('/db/import-batch', {
-      articles: approved,
-      lawCode: state.lawCode(),
+      articles:     approved,
+      lawCode:      state.lawCode(),
+      reviewerName: state.reviewerName,
     });
-    let msg = `Imported ${res.imported}`;
-    if (res.failed && res.failed.length) msg += `, ${res.failed.length} failed`;
-    toast(msg, res.failed?.length ? 'warn' : 'success');
+
+    let html = `<p><strong>Imported: ${res.imported}</strong></p>`;
+    if (res.failed && res.failed.length) {
+      html += `<p style="color:var(--red)">Failed: ${res.failed.length}</p><ul>`;
+      res.failed.forEach(f => {
+        html += `<li>Art. ${escHtml(String(f.articleNumber))}: ${escHtml(f.error)}</li>`;
+      });
+      html += '</ul>';
+    }
+    document.getElementById('push-results-body').innerHTML = html;
+    document.getElementById('push-results-modal').style.display = 'flex';
+    toast(`Pushed ${res.imported} articles`, res.failed?.length ? 'warn' : 'success');
   } catch (err) {
-    toast('Import failed: ' + err.message, 'error');
+    toast('Push failed: ' + err.message, 'error');
   } finally {
     hideLoading();
   }
@@ -401,14 +528,12 @@ async function loadPdfPage(page) {
     img.src = `data:image/png;base64,${res.image}`;
     img.style.display = 'block';
     img.style.width = `${pdfZoom * 100}%`;
-    img.style.transform = '';
     if (placeholder) placeholder.style.display = 'none';
     state.currentPage = page;
     state.totalPages = res.total;
-    document.getElementById('pdf-page-info').textContent =
-      `Page ${page} / ${res.total}`;
+    document.getElementById('pdf-page-info').textContent = `Page ${page} / ${res.total}`;
     document.getElementById('zoom-label').textContent = Math.round(pdfZoom * 100) + '%';
-  } catch (_) { /* no PDF loaded */ }
+  } catch (_) {}
 }
 
 function changePage(delta) {
@@ -424,7 +549,6 @@ function zoomPdf(delta) {
   else { pdfZoom = Math.min(4, Math.max(0.25, pdfZoom + delta)); }
   const img = document.getElementById('pdf-page-img');
   img.style.width = `${pdfZoom * 100}%`;
-  img.style.transform = '';
   document.getElementById('zoom-label').textContent = Math.round(pdfZoom * 100) + '%';
 }
 
@@ -446,9 +570,7 @@ function renderIssues() {
   const list = document.getElementById('issues-list');
   if (!state.issues.length) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
-  list.innerHTML = state.issues
-    .map(i => `<li>${escHtml(i)}</li>`)
-    .join('');
+  list.innerHTML = state.issues.map(i => `<li>${escHtml(i)}</li>`).join('');
 }
 
 // ── Word-level diff ───────────────────────────────────────────────────────
@@ -458,7 +580,6 @@ function diffHtml(extracted, db) {
   const aSet = new Set(a);
   const bSet = new Set(b);
   const result = [];
-  // Simple approach: highlight words unique to each side
   b.forEach(w => {
     if (!aSet.has(w)) result.push(`<span class="diff-del">${escHtml(w)}</span>`);
     else result.push(escHtml(w));
@@ -471,18 +592,16 @@ function diffHtml(extracted, db) {
 
 // ── Keyboard shortcuts ────────────────────────────────────────────────────
 function onKeyDown(e) {
-  if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); approveArticle(); }
+  if (e.ctrlKey && e.key === 'Enter')      { e.preventDefault(); approveArticle(); }
   if (e.ctrlKey && e.key === 'ArrowRight') { e.preventDefault(); advanceToNext(); }
-  if (e.ctrlKey && e.key === 'ArrowDown') { e.preventDefault(); nextIssue(); }
+  if (e.ctrlKey && e.key === 'ArrowDown')  { e.preventDefault(); nextIssue(); }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function escHtml(str) {
   return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function fileToBase64(file) {
@@ -521,7 +640,8 @@ function hideLoading() {
 
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
-  el.className = `toast toast-${type === 'success' ? 'success' : type === 'error' ? 'error' : 'warn'}`;
+  const cls = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'info' ? 'info' : 'warn';
+  el.className = `toast toast-${cls}`;
   el.textContent = msg;
   document.getElementById('toast-container').appendChild(el);
   setTimeout(() => el.remove(), 3200);
