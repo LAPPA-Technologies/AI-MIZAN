@@ -20,9 +20,13 @@ model LawArticle {
   articleNumber String      @map("article_number")
   language      String
   text          String
-  source        String
-  effectiveDate DateTime?   @map("effective_date")
-  version       Int
+  source            String
+  sourcePage        Int?     @map("source_page")
+  sourceDocument    String?  @map("source_document")
+  extractionQuality String?  @map("extraction_quality")
+  approvedBy        String?  @map("approved_by")
+  effectiveDate     DateTime? @map("effective_date")
+  version           Int
   updatedAt     DateTime    @updatedAt @map("updated_at")
   createdAt     DateTime    @default(now()) @map("created_at")
 
