@@ -94,6 +94,11 @@ class ImportBatchRequest(BaseModel):
     reviewerName: str = ""
 
 
+class MarkPushedRequest(BaseModel):
+    lawCode: str
+    articleNumbers: list[str]
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -372,6 +377,17 @@ def import_batch(req: ImportBatchRequest):
         return result
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+@app.post("/session/mark-pushed")
+def mark_pushed(req: MarkPushedRequest):
+    session_store.mark_pushed_batch(req.lawCode, req.articleNumbers)
+    # Also update in-memory session
+    pushed_set = set(req.articleNumbers)
+    for a in session["articles"]:
+        if a.get("articleNumber") in pushed_set:
+            a["status"] = "pushed"
+    return {"marked": len(req.articleNumbers)}
 
 
 # ── PDF viewer ────────────────────────────────────────────────────────────────

@@ -168,6 +168,7 @@ def list_sessions() -> list[dict]:
             articles = json.loads(row["data"])
             total    = len(articles)
             approved = sum(1 for a in articles if a.get("status") == "approved")
+            pushed   = sum(1 for a in articles if a.get("status") == "pushed")
             rejected = sum(1 for a in articles if a.get("status") == "rejected")
             pdf_row  = conn.execute(
                 "SELECT file_name, page_count FROM pdf_store WHERE law_code = ?",
@@ -179,8 +180,9 @@ def list_sessions() -> list[dict]:
                 "page_count": pdf_row["page_count"] if pdf_row else 0,
                 "total":      total,
                 "approved":   approved,
+                "pushed":     pushed,
                 "rejected":   rejected,
-                "pending":    total - approved - rejected,
+                "pending":    total - approved - pushed - rejected,
                 "updated_at": row["updated_at"],
             })
         return result
@@ -197,3 +199,27 @@ def log_push(law_code: str, reviewer: str, imported: int, failed: int) -> None:
             "INSERT INTO push_log (law_code, reviewer, imported, failed, pushed_at) VALUES (?,?,?,?,?)",
             (law_code, reviewer, imported, failed, datetime.now(timezone.utc).isoformat()),
         )
+
+
+def mark_pushed_batch(law_code: str, article_numbers: list[str]) -> None:
+    """Mark a list of articles as 'pushed' so they are excluded from future pushes."""
+    pushed_set = set(article_numbers)
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT data FROM sessions WHERE law_code = ?", (law_code,)
+        ).fetchone()
+        if row is None:
+            return
+        articles = json.loads(row["data"])
+        for a in articles:
+            if a.get("articleNumber") in pushed_set:
+                a["status"] = "pushed"
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "UPDATE sessions SET data = ?, updated_at = ? WHERE law_code = ?",
+            (json.dumps(articles, ensure_ascii=False), now, law_code),
+        )
+        conn.commit()
+    finally:
+        conn.close()

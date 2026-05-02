@@ -373,6 +373,7 @@ function renderArticleList() {
 function filterArticles() { renderArticleList(); }
 
 function statusIcon(a) {
+  if (a.status === 'pushed')         return '📤';
   if (a.status === 'approved')       return '✅';
   if (a.status === 'rejected')       return '❌';
   if (a.quality === 'corrupted')     return '❌';
@@ -383,6 +384,8 @@ function statusIcon(a) {
 // ── Select article ────────────────────────────────────────────────────────
 async function selectArticle(idx) {
   if (idx < 0 || idx >= state.articles.length) return;
+  // Auto-save unsaved edits before switching articles
+  if (state.editDirty) saveEdit(true);
   state.currentIndex = idx;
   state.editDirty    = false;
 
@@ -422,7 +425,7 @@ function onTextEdit() {
 }
 
 // ── Save edit ─────────────────────────────────────────────────────────────
-function saveEdit() {
+function saveEdit(silent = false) {
   if (state.currentIndex < 0) return;
   const a      = state.articles[state.currentIndex];
   a.text       = document.getElementById('edit-text').value;
@@ -433,7 +436,7 @@ function saveEdit() {
   a.section    = document.getElementById('edit-section').value;
   state.editDirty = false;
   document.getElementById('btn-save').disabled = true;
-  toast('Edit saved locally', 'success');
+  if (!silent) toast('Edit saved locally', 'success');
 }
 
 // ── Approve ───────────────────────────────────────────────────────────────
@@ -516,9 +519,11 @@ function pushToNeonDB() {
   if (!approved.length) { toast('No approved articles to push', 'warn'); return; }
   if (!state.reviewerName) { toast('Reviewer name required', 'warn'); return; }
 
+  const alreadyPushed = state.articles.filter(a => a.status === 'pushed').length;
   document.getElementById('push-modal-body').innerHTML =
-    `You are about to push <strong>${approved.length}</strong> articles to the ` +
+    `You are about to push <strong>${approved.length}</strong> newly approved articles to the ` +
     `production Neon database. This cannot be undone.<br><br>` +
+    (alreadyPushed ? `<em style="color:var(--muted)">${alreadyPushed} already-pushed article(s) will be skipped.</em><br><br>` : '') +
     `Reviewed by: <strong>${escHtml(state.reviewerName)}</strong><br>` +
     `Law code: <strong>${escHtml(state.lawCode())}</strong>`;
 
@@ -539,6 +544,20 @@ async function executePush() {
       lawCode:      state.lawCode(),
       reviewerName: state.reviewerName,
     });
+    // Mark successfully pushed articles — exclude from future pushes
+    const failedNums = new Set((res.failed || []).map(f => String(f.articleNumber)));
+    const pushedNums = approved
+      .filter(a => !failedNums.has(String(a.articleNumber)))
+      .map(a => a.articleNumber);
+    if (pushedNums.length) {
+      try { await post('/session/mark-pushed', { lawCode: state.lawCode(), articleNumbers: pushedNums }); } catch (_) {}
+      pushedNums.forEach(num => {
+        const art = state.articles.find(a => a.articleNumber === num);
+        if (art) art.status = 'pushed';
+      });
+      renderArticleList();
+      updateProgress();
+    }
     let html = `<p><strong>Imported: ${res.imported}</strong></p>`;
     if (res.failed && res.failed.length) {
       html += `<p style="color:var(--red)">Failed: ${res.failed.length}</p><ul>`;
@@ -600,7 +619,7 @@ function zoomPdf(delta) {
 // ── Progress ──────────────────────────────────────────────────────────────
 function updateProgress() {
   const total    = state.articles.length;
-  const reviewed = state.articles.filter(a => a.status === 'approved' || a.status === 'rejected').length;
+  const reviewed = state.articles.filter(a => a.status === 'approved' || a.status === 'rejected' || a.status === 'pushed').length;
   const pct      = total ? Math.round((reviewed / total) * 100) : 0;
   document.getElementById('progress-label').textContent = `${reviewed} / ${total} reviewed`;
   document.getElementById('progress-bar').style.width   = pct + '%';
