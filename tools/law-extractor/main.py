@@ -38,6 +38,7 @@ class ExtractRequest(BaseModel):
     pdf_base64: str
     lawCode: str
     apiProvider: str = "claude"  # "claude" or "openai"
+    fileName: str = ""           # original PDF filename, stored as sourceDocument
 
 
 class LoadPdfRequest(BaseModel):
@@ -48,11 +49,14 @@ class ApproveRequest(BaseModel):
     lawCode: str
     articleNumber: str
     text: str
-    chapter: Optional[str] = None
     book: Optional[str] = None
     part: Optional[str] = None
     title: Optional[str] = None
+    chapter: Optional[str] = None
     section: Optional[str] = None
+    startPage: Optional[int] = None
+    sourceDocument: Optional[str] = None
+    quality: Optional[str] = None
 
 
 class RejectRequest(BaseModel):
@@ -112,7 +116,8 @@ def extract(req: ExtractRequest):
 
     try:
         articles, page_count, interrupted, interrupt_reason = extractor.extract_all_articles(
-            pdf_bytes, progress_callback=on_progress, provider=provider
+            pdf_bytes, progress_callback=on_progress, provider=provider,
+            source_document=req.fileName,
         )
     except Exception as e:
         import traceback
@@ -172,13 +177,16 @@ def get_db_article(law_code: str, article_number: str):
 @app.post("/db/approve")
 def approve(req: ApproveRequest):
     article_dict = {
-        "articleNumber": req.articleNumber,
-        "text": req.text,
-        "chapter": req.chapter,
-        "book": req.book,
-        "part": req.part,
-        "title": req.title,
-        "section": req.section,
+        "articleNumber":  req.articleNumber,
+        "text":           req.text,
+        "book":           req.book,
+        "part":           req.part,
+        "title":          req.title,
+        "chapter":        req.chapter,
+        "section":        req.section,
+        "startPage":      req.startPage,
+        "sourceDocument": req.sourceDocument,
+        "quality":        req.quality,
     }
     try:
         result = db.upsert_article(req.lawCode, article_dict)

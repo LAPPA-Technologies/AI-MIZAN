@@ -8,6 +8,7 @@ const state = {
   currentPage: 1,
   totalPages: 0,
   pdfBase64: null,
+  pdfFileName: '',
   lawCode: () => document.getElementById('law-code-select').value,
   provider: () => document.getElementById('api-provider-select').value,
   issues: [],
@@ -60,6 +61,7 @@ async function onPdfUpload(e) {
   try {
     const b64 = await fileToBase64(file);
     state.pdfBase64 = b64;
+    state.pdfFileName = file.name;
     const res = await post('/session/load-pdf', { pdf_base64: b64 });
     state.totalPages = res.pageCount;
     state.currentPage = 1;
@@ -101,9 +103,10 @@ async function extractArticles() {
 
   try {
     const res = await post('/extract', {
-      pdf_base64: state.pdfBase64,
-      lawCode: state.lawCode(),
+      pdf_base64:  state.pdfBase64,
+      lawCode:     state.lawCode(),
       apiProvider: provider,
+      fileName:    state.pdfFileName || '',
     });
 
     if (res.interrupted) {
@@ -223,8 +226,11 @@ async function selectArticle(idx) {
   document.getElementById('editor-empty').style.display = 'none';
   document.getElementById('edit-article-num').value = a.articleNumber;
   document.getElementById('edit-text').value = a.text || '';
-  document.getElementById('edit-chapter').value = a.chapter || '';
   document.getElementById('edit-book').value = a.book || '';
+  document.getElementById('edit-part').value = a.part || '';
+  document.getElementById('edit-title').value = a.title || '';
+  document.getElementById('edit-chapter').value = a.chapter || '';
+  document.getElementById('edit-section').value = a.section || '';
 
   // Quality badge
   const qb = document.getElementById('quality-badge');
@@ -267,9 +273,12 @@ function onTextEdit() {
 function saveEdit() {
   if (state.currentIndex < 0) return;
   const a = state.articles[state.currentIndex];
-  a.text = document.getElementById('edit-text').value;
+  a.text    = document.getElementById('edit-text').value;
+  a.book    = document.getElementById('edit-book').value;
+  a.part    = document.getElementById('edit-part').value;
+  a.title   = document.getElementById('edit-title').value;
   a.chapter = document.getElementById('edit-chapter').value;
-  a.book = document.getElementById('edit-book').value;
+  a.section = document.getElementById('edit-section').value;
   state.editDirty = false;
   document.getElementById('btn-save').disabled = true;
   toast('Edit saved locally', 'success');
@@ -282,11 +291,17 @@ async function approveArticle() {
   const a = state.articles[state.currentIndex];
   try {
     await post('/db/approve', {
-      lawCode: state.lawCode(),
-      articleNumber: a.articleNumber,
-      text: a.text,
-      chapter: a.chapter || null,
-      book: a.book || null,
+      lawCode:        state.lawCode(),
+      articleNumber:  a.articleNumber,
+      text:           a.text,
+      book:           a.book           || null,
+      part:           a.part           || null,
+      title:          a.title          || null,
+      chapter:        a.chapter        || null,
+      section:        a.section        || null,
+      startPage:      a.startPage      || null,
+      sourceDocument: a.sourceDocument || null,
+      quality:        a.quality        || null,
     });
     a.status = 'approved';
     a.quality = 'clean';

@@ -72,32 +72,42 @@ def upsert_article(law_code: str, article: dict) -> dict:
             cur.execute(
                 """
                 INSERT INTO law_articles
-                    (id, code, article_number, language, text, chapter, book,
-                     part, title, section, source, version, updated_at, created_at)
+                    (id, code, article_number, language, text,
+                     book, part, title, chapter, section,
+                     source, source_page, source_document, extraction_quality,
+                     version, updated_at, created_at)
                 VALUES
-                    (gen_random_uuid()::text, %s, %s, 'ar', %s, %s, %s,
-                     %s, %s, %s, 'extractor', 1, NOW(), NOW())
+                    (gen_random_uuid()::text, %s, %s, 'ar', %s,
+                     %s, %s, %s, %s, %s,
+                     'extractor', %s, %s, %s,
+                     1, NOW(), NOW())
                 ON CONFLICT (code, article_number, language, version)
                 DO UPDATE SET
-                    text       = EXCLUDED.text,
-                    chapter    = EXCLUDED.chapter,
-                    book       = EXCLUDED.book,
-                    part       = EXCLUDED.part,
-                    title      = EXCLUDED.title,
-                    section    = EXCLUDED.section,
-                    source     = 'extractor',
-                    updated_at = NOW()
+                    text               = EXCLUDED.text,
+                    book               = EXCLUDED.book,
+                    part               = EXCLUDED.part,
+                    title              = EXCLUDED.title,
+                    chapter            = EXCLUDED.chapter,
+                    section            = EXCLUDED.section,
+                    source             = 'extractor',
+                    source_page        = EXCLUDED.source_page,
+                    source_document    = EXCLUDED.source_document,
+                    extraction_quality = EXCLUDED.extraction_quality,
+                    updated_at         = NOW()
                 RETURNING id
                 """,
                 (
                     law_code,
                     article["articleNumber"],
                     article["text"],
-                    article.get("chapter"),
                     article.get("book"),
                     article.get("part"),
                     article.get("title"),
+                    article.get("chapter"),
                     article.get("section"),
+                    article.get("startPage"),
+                    article.get("sourceDocument"),
+                    article.get("quality"),
                 ),
             )
             conn.commit()

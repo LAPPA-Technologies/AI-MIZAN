@@ -286,7 +286,7 @@ def _deduplicate(articles: list[dict]) -> list[dict]:
     return result
 
 
-def extract_with_pdfplumber(pdf_bytes: bytes) -> tuple[list[dict], int]:
+def extract_with_pdfplumber(pdf_bytes: bytes, source_document: str = "") -> tuple[list[dict], int]:
     """Extract articles using production dict-mode engine. Returns (articles, page_count)."""
     lines, page_count = extract_lines_from_pdf(pdf_bytes)
     ar_mode = _detect_ar_mode(lines)
@@ -298,14 +298,17 @@ def extract_with_pdfplumber(pdf_bytes: bytes) -> tuple[list[dict], int]:
         h = raw["hierarchy"]
         body = _clean_text("\n".join(raw["body_lines"]))
         articles.append({
-            "articleNumber": raw["articleNumber"],
-            "startPage":     raw.get("startPage", 1),
-            "text":    body,
-            "book":    h.get("book"),
-            "chapter": h.get("title") or h.get("chapter"),
-            "section": h.get("section"),
-            "quality": "pending",
-            "status":  "pending",
+            "articleNumber":  raw["articleNumber"],
+            "startPage":      raw.get("startPage", 1),
+            "text":           body,
+            "book":           h.get("book"),
+            "part":           h.get("part"),
+            "title":          h.get("title"),
+            "chapter":        h.get("chapter"),
+            "section":        h.get("section"),
+            "sourceDocument": source_document or None,
+            "quality":        "pending",
+            "status":         "pending",
         })
 
     return articles, page_count
@@ -359,6 +362,7 @@ def extract_all_articles(
     pdf_bytes: bytes,
     progress_callback=None,
     provider: str = "claude",
+    source_document: str = "",
 ) -> tuple[list[dict], int, bool, Optional[str]]:
     """
     Step 1: dict-mode fitz extraction → split articles + hierarchy (no API)
@@ -372,7 +376,7 @@ def extract_all_articles(
     if progress_callback:
         progress_callback(0, 0, "جارٍ استخراج هيكل الوثيقة...")
 
-    articles, page_count = extract_with_pdfplumber(pdf_bytes)
+    articles, page_count = extract_with_pdfplumber(pdf_bytes, source_document=source_document)
     total = len(articles)
 
     if not articles:
@@ -436,7 +440,7 @@ def extract_all_articles(
     # Clean unique structure values (book/chapter/section) — deduplicated API calls
     unique_structs = {
         v for a in articles
-        for v in (a.get("book"), a.get("chapter"), a.get("section"))
+        for v in (a.get("book"), a.get("part"), a.get("title"), a.get("chapter"), a.get("section"))
         if v
     }
     struct_map: dict[str, str] = {}
@@ -454,7 +458,7 @@ def extract_all_articles(
                     struct_map[original] = original
 
     for a in articles:
-        for fld in ("book", "chapter", "section"):
+        for fld in ("book", "part", "title", "chapter", "section"):
             if a.get(fld) and a[fld] in struct_map:
                 a[fld] = struct_map[a[fld]]
 
