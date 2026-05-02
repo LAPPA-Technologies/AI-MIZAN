@@ -39,6 +39,7 @@
       <option value="openai">🟢 OpenAI</option>
       <option value="none">🚫 No AI cleaning</option>
     </select>
+    <button class="btn" onclick="openSessionsList()" title="All sessions">Sessions</button>
     <label class="btn btn-primary" for="pdf-upload">Upload PDF</label>
     <input type="file" id="pdf-upload" accept=".pdf" style="display:none" />
   </div>
@@ -164,15 +165,37 @@
 <!-- ── Identity modal (shown on first load) ───────────────────────────────── -->
 <div id="identity-modal" class="modal-overlay" style="display:none">
   <div class="modal-box">
-    <div class="modal-title">Who is reviewing?</div>
+    <div class="modal-title">⚖️ AI-Mizan Law Extractor</div>
     <div class="modal-body">
-      Enter your name to begin the review session. This will be recorded
-      with every approve/reject action.
+      Enter your name and security code to begin. Your name will be
+      recorded with every approve and reject action.
     </div>
-    <input type="text" id="identity-input" placeholder="Your name..."
-           style="direction:ltr" onkeydown="if(event.key==='Enter')submitIdentity()" />
+    <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">
+      Reviewer name
+      <input type="text" id="identity-input" placeholder="Your full name..."
+             style="direction:ltr;font-size:14px"
+             onkeydown="if(event.key==='Enter')document.getElementById('security-input').focus()" />
+    </label>
+    <label id="security-label" style="display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">
+      Security code
+      <input type="password" id="security-input" placeholder="Enter access code..."
+             style="direction:ltr;font-size:14px;letter-spacing:.15em"
+             onkeydown="if(event.key==='Enter')submitIdentity()" />
+    </label>
+    <div id="identity-error" style="color:var(--red);font-size:12px;display:none"></div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="submitIdentity()">Start Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sessions list modal ────────────────────────────────────────────────── -->
+<div id="sessions-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:600px;width:95%">
+    <div class="modal-title">Saved Sessions</div>
+    <div id="sessions-list-body" class="sessions-list"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSessionsList()">Close</button>
     </div>
   </div>
 </div>

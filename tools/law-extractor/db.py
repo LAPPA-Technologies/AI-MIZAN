@@ -75,12 +75,12 @@ def upsert_article(law_code: str, article: dict) -> dict:
                     (id, code, article_number, language, text,
                      book, part, title, chapter, section,
                      source, source_page, source_document, extraction_quality,
-                     version, updated_at, created_at)
+                     approved_by, version, updated_at, created_at)
                 VALUES
                     (gen_random_uuid()::text, %s, %s, 'ar', %s,
                      %s, %s, %s, %s, %s,
                      'extractor', %s, %s, %s,
-                     1, NOW(), NOW())
+                     %s, 1, NOW(), NOW())
                 ON CONFLICT (code, article_number, language, version)
                 DO UPDATE SET
                     text               = EXCLUDED.text,
@@ -93,6 +93,7 @@ def upsert_article(law_code: str, article: dict) -> dict:
                     source_page        = EXCLUDED.source_page,
                     source_document    = EXCLUDED.source_document,
                     extraction_quality = EXCLUDED.extraction_quality,
+                    approved_by        = EXCLUDED.approved_by,
                     updated_at         = NOW()
                 RETURNING id
                 """,
@@ -108,6 +109,7 @@ def upsert_article(law_code: str, article: dict) -> dict:
                     article.get("startPage"),
                     article.get("sourceDocument"),
                     article.get("quality"),
+                    article.get("approvedBy"),
                 ),
             )
             conn.commit()

@@ -1,4 +1,11 @@
+"""
+main.py — FastAPI server for AI-Mizan Law Extractor.
+
+Security: set EXTRACTOR_PASSCODE in tools/law-extractor/.env to require
+a code at login. Leave unset (or empty) for no code requirement.
+"""
 import base64
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -23,7 +30,10 @@ app = FastAPI(title="AI-Mizan Law Extractor")
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# In-memory state (single-user local tool — resets on restart)
+# Security passcode — set EXTRACTOR_PASSCODE in .env, leave empty to disable
+EXTRACTOR_PASSCODE: str = os.getenv("EXTRACTOR_PASSCODE", "").strip()
+
+# In-memory state (single-user local tool — resets on server restart)
 session: dict = {
     "pdf_bytes": None,
     "page_count": 0,
@@ -32,7 +42,6 @@ session: dict = {
     "progress": {"done": 0, "total": 0, "status": "idle", "message": ""},
 }
 
-# Reviewer identity — set once per session, not persisted to DB
 _reviewer_name: str = ""
 
 
@@ -47,10 +56,13 @@ class ExtractRequest(BaseModel):
 
 class LoadPdfRequest(BaseModel):
     pdf_base64: str
+    fileName: str = ""
+    lawCode: str = ""
 
 
 class IdentityRequest(BaseModel):
     name: str
+    securityCode: str = ""
 
 
 class ApproveRequest(BaseModel):
@@ -89,11 +101,14 @@ def index():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 
-# ── Reviewer identity ─────────────────────────────────────────────────────────
+# ── Reviewer identity + security ──────────────────────────────────────────────
 
 @app.get("/session/identity")
 def get_identity():
-    return {"name": _reviewer_name}
+    return {
+        "name": _reviewer_name,
+        "hasPasscode": bool(EXTRACTOR_PASSCODE),
+    }
 
 
 @app.post("/session/identity")
@@ -102,11 +117,18 @@ def set_identity(req: IdentityRequest):
     name = req.name.strip()
     if not name:
         raise HTTPException(400, "Name cannot be empty")
+    if EXTRACTOR_PASSCODE and req.securityCode != EXTRACTOR_PASSCODE:
+        raise HTTPException(403, "Invalid security code")
     _reviewer_name = name
     return {"name": _reviewer_name}
 
 
-# ── Session persistence ───────────────────────────────────────────────────────
+# ── Session list ──────────────────────────────────────────────────────────────
+
+@app.get("/session/list")
+def list_sessions():
+    return {"sessions": session_store.list_sessions()}
+
 
 @app.get("/session/load/{law_code}")
 def load_saved_session(law_code: str):
@@ -115,13 +137,35 @@ def load_saved_session(law_code: str):
         return {"articles": None, "lawCode": law_code}
     approved = sum(1 for a in articles if a.get("status") == "approved")
     rejected = sum(1 for a in articles if a.get("status") == "rejected")
+    pdf_meta = session_store.load_pdf(law_code)
     return {
-        "articles": articles,
-        "lawCode": law_code,
-        "total": len(articles),
-        "approved": approved,
-        "rejected": rejected,
+        "articles":  articles,
+        "lawCode":   law_code,
+        "total":     len(articles),
+        "approved":  approved,
+        "rejected":  rejected,
+        "fileName":  pdf_meta["file_name"]  if pdf_meta else None,
+        "pageCount": pdf_meta["page_count"] if pdf_meta else 0,
     }
+
+
+@app.get("/session/pdf/{law_code}")
+def get_session_pdf(law_code: str):
+    pdf_data = session_store.load_pdf(law_code)
+    if pdf_data is None:
+        raise HTTPException(404, f"No PDF stored for {law_code}")
+    return {
+        "pdf_base64": base64.b64encode(pdf_data["pdf_bytes"]).decode(),
+        "file_name":  pdf_data["file_name"],
+        "page_count": pdf_data["page_count"],
+        "law_code":   law_code,
+    }
+
+
+@app.delete("/session/{law_code}")
+def delete_session(law_code: str):
+    session_store.delete_session(law_code)
+    return {"deleted": law_code}
 
 
 # ── PDF load ──────────────────────────────────────────────────────────────────
@@ -136,9 +180,16 @@ def load_pdf(req: LoadPdfRequest):
     import pdfplumber, io as _io
     with pdfplumber.open(_io.BytesIO(pdf_bytes)) as pdf:
         page_count = len(pdf.pages)
+
     session["pdf_bytes"] = pdf_bytes
     session["page_count"] = page_count
     session["articles"] = []
+
+    # Persist PDF so the session can be fully restored after restart
+    if req.lawCode:
+        session["law_code"] = req.lawCode
+        session_store.save_pdf(req.lawCode, pdf_bytes, req.fileName or "unknown.pdf", page_count)
+
     return {"pageCount": page_count, "textLength": len(pdf_bytes)}
 
 
@@ -164,7 +215,6 @@ def extract(req: ExtractRequest):
         "message": f"جارٍ تحليل الوثيقة ({provider})...", "provider": provider,
     }
 
-    # Clear any prior session for this law_code before extracting fresh
     session_store.clear_session(req.lawCode)
 
     def on_progress(done: int, total: int, message: str):
@@ -196,8 +246,9 @@ def extract(req: ExtractRequest):
     issues = validator.validate(articles, req.lawCode)
     session["articles"] = articles
 
-    # Persist session to SQLite so it survives restarts
     session_store.save_session(req.lawCode, articles)
+    # Also save the PDF (in case it wasn't saved via /session/load-pdf)
+    session_store.save_pdf(req.lawCode, pdf_bytes, req.fileName or "unknown.pdf", page_count)
 
     return {
         "articles": articles,
@@ -257,28 +308,23 @@ def approve(req: ApproveRequest):
         "startPage":      req.startPage,
         "sourceDocument": req.sourceDocument,
         "quality":        req.quality,
+        "approvedBy":     reviewer,
     }
     try:
         result = db.upsert_article(req.lawCode, article_dict)
     except Exception as e:
         raise HTTPException(500, str(e))
 
-    # Update in-memory session
     for a in session["articles"]:
         if a["articleNumber"] == req.articleNumber:
-            a["status"] = "approved"
-            a["quality"] = "clean"
-            a["reviewer"] = reviewer
-            a["approver"] = reviewer
-            a["approvedAt"] = now_iso
+            a.update({"status": "approved", "quality": "clean",
+                      "reviewer": reviewer, "approver": reviewer, "approvedAt": now_iso})
             break
 
-    # Persist to SQLite
     session_store.update_article(req.lawCode, req.articleNumber, {
         "status": "approved", "quality": "clean",
         "reviewer": reviewer, "approver": reviewer, "approvedAt": now_iso,
     })
-
     return {"success": True, "id": result["id"]}
 
 
@@ -291,34 +337,32 @@ def reject(req: RejectRequest):
         raise HTTPException(400, "Reviewer name required before rejecting")
 
     now_iso = datetime.now(timezone.utc).isoformat()
-
+    updates = {
+        "status": "rejected",
+        "rejectionReason":    req.reason,
+        "rejectionCategory":  req.rejectionCategory,
+        "reviewer":           reviewer,
+        "rejectedAt":         now_iso,
+    }
     for a in session["articles"]:
         if a["articleNumber"] == req.articleNumber:
-            a["status"] = "rejected"
-            a["rejectionReason"] = req.reason
-            a["rejectionCategory"] = req.rejectionCategory
-            a["reviewer"] = reviewer
-            a["rejectedAt"] = now_iso
+            a.update(updates)
             break
 
-    session_store.update_article(req.lawCode, req.articleNumber, {
-        "status": "rejected",
-        "rejectionReason": req.reason,
-        "rejectionCategory": req.rejectionCategory,
-        "reviewer": reviewer,
-        "rejectedAt": now_iso,
-    })
-
+    session_store.update_article(req.lawCode, req.articleNumber, updates)
     return {"success": True}
 
 
-# ── Push to Neon DB (batch import) ────────────────────────────────────────────
+# ── Push to Neon DB ───────────────────────────────────────────────────────────
 
 @app.post("/db/import-batch")
 def import_batch(req: ImportBatchRequest):
     approved = [a for a in req.articles if a.get("status") == "approved"]
     if not approved:
         return {"imported": 0, "failed": [], "message": "No approved articles to import"}
+    # Attach approver to each article before upserting
+    for a in approved:
+        a["approvedBy"] = req.reviewerName
     try:
         result = db.import_batch(req.lawCode, approved)
         session_store.log_push(

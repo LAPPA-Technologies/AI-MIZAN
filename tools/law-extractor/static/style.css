@@ -590,6 +590,97 @@ select { cursor: pointer; }
 /* ── Toast info variant ──────────────────────────────────────────────────── */
 .toast-info { border-color: var(--blue); color: #93c5fd; }
 
+/* ── Sessions list modal ─────────────────────────────────────────────────── */
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sessions-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px 0;
+  font-size: 13px;
+}
+
+.session-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.session-card-main { flex: 1; min-width: 0; }
+
+.session-card-law {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.session-card-file {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-card-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.stat-approved { color: var(--green); }
+.stat-rejected { color: var(--red); }
+.stat-pending  { color: var(--amber); }
+.stat-total    { color: var(--muted); }
+
+.session-card-progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.session-progress-bar {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.session-card-date {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.session-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 /* ── Scrollbars ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
