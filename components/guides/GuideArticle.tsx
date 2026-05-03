@@ -66,34 +66,36 @@ function renderContent(text: string): React.ReactNode {
       const rows = trimmed
         .split("\n")
         .filter((r) => !/^\|[-\s|]+\|$/.test(r.trim()));
+      const parseRow = (row: string) =>
+        row
+          .split("|")
+          .filter((_, i, a) => i > 0 && i < a.length - 1)
+          .map((c) => c.trim());
+      const [headerRow, ...bodyRows] = rows;
+      const headerCells = parseRow(headerRow);
       return (
         <div key={bi} className="overflow-x-auto my-4 rounded-lg border border-slate-200">
           <table className="w-full text-sm border-collapse min-w-[320px]">
-            {rows.map((row, ri) => {
-              const cells = row
-                .split("|")
-                .filter((_, i, a) => i > 0 && i < a.length - 1)
-                .map((c) => c.trim());
-              const isHeader = ri === 0;
-              return (
-                <tr
-                  key={ri}
-                  className={isHeader ? "bg-green-700 text-white" : ri % 2 === 0 ? "bg-white" : "bg-green-50/40"}
-                >
-                  {cells.map((cell, ci) =>
-                    isHeader ? (
-                      <th key={ci} className="px-3 py-2.5 text-start font-semibold border border-green-600 whitespace-nowrap">
-                        {cell}
-                      </th>
-                    ) : (
-                      <td key={ci} className="px-3 py-2.5 border border-slate-200">
-                        {renderInline(cell)}
-                      </td>
-                    )
-                  )}
+            <thead>
+              <tr className="bg-green-700 text-white">
+                {headerCells.map((cell, ci) => (
+                  <th key={ci} className="px-3 py-2.5 text-start font-semibold border border-green-600 whitespace-nowrap">
+                    {cell}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-green-50/40"}>
+                  {parseRow(row).map((cell, ci) => (
+                    <td key={ci} className="px-3 py-2.5 border border-slate-200">
+                      {renderInline(cell)}
+                    </td>
+                  ))}
                 </tr>
-              );
-            })}
+              ))}
+            </tbody>
           </table>
         </div>
       );
