@@ -16,6 +16,12 @@ import ArticleModal from "../laws/ArticleModal";
 const HeritageCalculator = lazy(
   () => import("../simulators/HeritageCalculator")
 );
+const LicenciementCalculator = lazy(
+  () => import("../simulators/LicenciementCalculator")
+);
+const LoyerCalculator = lazy(
+  () => import("../simulators/LoyerCalculator")
+);
 
 type Props = {
   guide: Guide;
@@ -328,7 +334,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
       </div>
 
       {/* ── ZONE 4: Embedded calculator ── */}
-      {guide.relatedCalculator === "heritage" && (
+      {guide.relatedCalculator && ["heritage", "licenciement", "loyer"].includes(guide.relatedCalculator) && (
         <section className="space-y-4 rounded-2xl border border-green-100 bg-green-50/30 p-5 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-white">
@@ -353,7 +359,9 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
               </div>
             }
           >
-            <HeritageCalculator dict={dict} lang={lang} />
+            {guide.relatedCalculator === "heritage" && <HeritageCalculator dict={dict} lang={lang} />}
+            {guide.relatedCalculator === "licenciement" && <LicenciementCalculator dict={dict} lang={lang} />}
+            {guide.relatedCalculator === "loyer" && <LoyerCalculator dict={dict} lang={lang} />}
           </Suspense>
         </section>
       )}
