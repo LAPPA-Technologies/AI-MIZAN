@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 
 // Fallback order: requested lang → ar → fr. EN never falls back to FR.
 function pick(ar: string, fr: string, en: string, lang: string): string {
@@ -188,11 +188,20 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
 
   const closeModal = useCallback(() => setOpenArticle(null), []);
 
-  const waText = encodeURIComponent(
-    isAr
-      ? `📋 ${guide.titleAr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}\n\n🔗 ${typeof window !== "undefined" ? window.location.href : ""}`
-      : `📋 ${guide.titleFr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}`
+  const baseWaText = isAr
+    ? `📋 ${guide.titleAr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}`
+    : `📋 ${guide.titleFr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}`;
+  const [waHref, setWaHref] = useState(
+    `https://wa.me/?text=${encodeURIComponent(baseWaText)}`
   );
+  useEffect(() => {
+    if (isAr) {
+      setWaHref(
+        `https://wa.me/?text=${encodeURIComponent(`${baseWaText}\n\n🔗 ${window.location.href}`)}`
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
@@ -249,7 +258,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
         {/* Share — WhatsApp mobile only */}
         <div className="md:hidden pt-1">
           <a
-            href={`https://wa.me/?text=${waText}`}
+            href={waHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#20b858] transition-colors"
