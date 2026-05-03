@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -59,20 +59,10 @@ export default function SalaireCalculator({ dict, lang, initialGross }: SalaireC
   );
   const [error, setError] = useState("");
   const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = lang === "ar";
 
   useEffect(() => {
     if (gross) router.replace(`${pathname}?brut=${gross}`, { scroll: false });
-  }, [gross]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const g = parseFloat(gross);
-      if (!isNaN(g) && g > 0) { setError(""); setResult(calcSalary(g)); }
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [gross]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {

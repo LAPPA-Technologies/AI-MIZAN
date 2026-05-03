@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Row } from "./Row";
 import { fmt } from "../../lib/simulatorHelpers";
@@ -28,20 +28,10 @@ export default function LoyerCalculator({ dict, lang, initialRent }: LoyerCalcul
   );
   const [error, setError] = useState("");
   const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = lang === "ar";
 
   useEffect(() => {
     if (rent) router.replace(`${pathname}?loyer=${rent}`, { scroll: false });
-  }, [rent]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const val = parseFloat(rent);
-      if (!isNaN(val) && val > 0) { setError(""); setResult(calcRent(val)); }
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [rent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {
