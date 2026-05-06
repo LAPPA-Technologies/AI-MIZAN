@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 
 // Fallback order: requested lang → ar → fr. EN never falls back to FR.
 function pick(ar: string, fr: string, en: string, lang: string): string {
@@ -15,6 +15,12 @@ import ArticleModal from "../laws/ArticleModal";
 
 const HeritageCalculator = lazy(
   () => import("../simulators/HeritageCalculator")
+);
+const LicenciementCalculator = lazy(
+  () => import("../simulators/LicenciementCalculator")
+);
+const LoyerCalculator = lazy(
+  () => import("../simulators/LoyerCalculator")
 );
 
 type Props = {
@@ -66,34 +72,36 @@ function renderContent(text: string): React.ReactNode {
       const rows = trimmed
         .split("\n")
         .filter((r) => !/^\|[-\s|]+\|$/.test(r.trim()));
+      const parseRow = (row: string) =>
+        row
+          .split("|")
+          .filter((_, i, a) => i > 0 && i < a.length - 1)
+          .map((c) => c.trim());
+      const [headerRow, ...bodyRows] = rows;
+      const headerCells = parseRow(headerRow);
       return (
         <div key={bi} className="overflow-x-auto my-4 rounded-lg border border-slate-200">
           <table className="w-full text-sm border-collapse min-w-[320px]">
-            {rows.map((row, ri) => {
-              const cells = row
-                .split("|")
-                .filter((_, i, a) => i > 0 && i < a.length - 1)
-                .map((c) => c.trim());
-              const isHeader = ri === 0;
-              return (
-                <tr
-                  key={ri}
-                  className={isHeader ? "bg-green-700 text-white" : ri % 2 === 0 ? "bg-white" : "bg-green-50/40"}
-                >
-                  {cells.map((cell, ci) =>
-                    isHeader ? (
-                      <th key={ci} className="px-3 py-2.5 text-start font-semibold border border-green-600 whitespace-nowrap">
-                        {cell}
-                      </th>
-                    ) : (
-                      <td key={ci} className="px-3 py-2.5 border border-slate-200">
-                        {renderInline(cell)}
-                      </td>
-                    )
-                  )}
+            <thead>
+              <tr className="bg-green-700 text-white">
+                {headerCells.map((cell, ci) => (
+                  <th key={ci} className="px-3 py-2.5 text-start font-semibold border border-green-600 whitespace-nowrap">
+                    {cell}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-green-50/40"}>
+                  {parseRow(row).map((cell, ci) => (
+                    <td key={ci} className="px-3 py-2.5 border border-slate-200">
+                      {renderInline(cell)}
+                    </td>
+                  ))}
                 </tr>
-              );
-            })}
+              ))}
+            </tbody>
           </table>
         </div>
       );
@@ -186,11 +194,20 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
 
   const closeModal = useCallback(() => setOpenArticle(null), []);
 
-  const waText = encodeURIComponent(
-    isAr
-      ? `📋 ${guide.titleAr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}\n\n🔗 ${typeof window !== "undefined" ? window.location.href : ""}`
-      : `📋 ${guide.titleFr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}`
+  const baseWaText = isAr
+    ? `📋 ${guide.titleAr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}`
+    : `📋 ${guide.titleFr}\n\n${keyPoints.map((p) => `• ${p}`).join("\n")}`;
+  const [waHref, setWaHref] = useState(
+    `https://wa.me/?text=${encodeURIComponent(baseWaText)}`
   );
+  useEffect(() => {
+    if (isAr) {
+      setWaHref(
+        `https://wa.me/?text=${encodeURIComponent(`${baseWaText}\n\n🔗 ${window.location.href}`)}`
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
@@ -247,7 +264,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
         {/* Share — WhatsApp mobile only */}
         <div className="md:hidden pt-1">
           <a
-            href={`https://wa.me/?text=${waText}`}
+            href={waHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#20b858] transition-colors"
@@ -317,7 +334,7 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
       </div>
 
       {/* ── ZONE 4: Embedded calculator ── */}
-      {guide.relatedCalculator === "heritage" && (
+      {guide.relatedCalculator && ["heritage", "licenciement", "loyer"].includes(guide.relatedCalculator) && (
         <section className="space-y-4 rounded-2xl border border-green-100 bg-green-50/30 p-5 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-white">
@@ -342,7 +359,9 @@ export default function GuideArticle({ guide, lang, dict }: Props) {
               </div>
             }
           >
-            <HeritageCalculator dict={dict} lang={lang} />
+            {guide.relatedCalculator === "heritage" && <HeritageCalculator dict={dict} lang={lang} />}
+            {guide.relatedCalculator === "licenciement" && <LicenciementCalculator dict={dict} lang={lang} />}
+            {guide.relatedCalculator === "loyer" && <LoyerCalculator dict={dict} lang={lang} />}
           </Suspense>
         </section>
       )}

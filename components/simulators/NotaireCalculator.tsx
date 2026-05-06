@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -36,20 +36,10 @@ export default function NotaireCalculator({ dict, lang, initialPrice }: NotaireC
   );
   const [error, setError] = useState("");
   const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = lang === "ar";
 
   useEffect(() => {
     if (price) router.replace(`${pathname}?prix=${price}`, { scroll: false });
-  }, [price]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const p = parseFloat(price);
-      if (!isNaN(p) && p > 0) { setError(""); setResult(calcNotary(p)); }
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [price]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {

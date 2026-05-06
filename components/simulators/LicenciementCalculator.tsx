@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Row } from "./Row";
 import { fmt, rnd } from "../../lib/simulatorHelpers";
@@ -43,7 +43,6 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
   );
   const [error, setError] = useState("");
   const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = lang === "ar";
 
   useEffect(() => {
@@ -51,16 +50,6 @@ export default function LicenciementCalculator({ dict, lang, initialGross, initi
     if (gross) parts.push(`salaire=${gross}`);
     if (years) parts.push(`annees=${years}`);
     if (parts.length) router.replace(`${pathname}?${parts.join("&")}`, { scroll: false });
-  }, [gross, years]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const g = parseFloat(gross);
-      const y = parseFloat(years);
-      if (!isNaN(g) && g > 0 && !isNaN(y) && y > 0) { setError(""); setResult(calcSeverance(g, y)); }
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [gross, years]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = (e: React.FormEvent) => {

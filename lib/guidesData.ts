@@ -764,6 +764,401 @@ If the judgment is unfavorable: appeal within 30 days.`,
       },
     ],
   },
+  {
+    slug: "caution-locative-maroc",
+    titleAr: "الضمان الكرائي في المغرب — دليلك الكامل",
+    titleFr: "La caution locative au Maroc — Guide complet",
+    titleEn: "Rent Deposit in Morocco — Complete Guide",
+    descriptionAr:
+      "كل ما تحتاج معرفته عن الضمان الكرائي في المغرب — الحد الأقصى القانوني بموجب القانون 67.12، شروط استرداده، وكيف تسترجعه إذا رفض المالك إعادته.",
+    descriptionFr:
+      "Tout ce que vous devez savoir sur la caution locative au Maroc — plafond légal fixé par la Loi 67-12, conditions de restitution, et comment la récupérer si le bailleur refuse.",
+    descriptionEn:
+      "Everything you need to know about the rent deposit in Morocco — the legal cap set by Law 67-12, return conditions, and how to recover it if the landlord refuses.",
+    category: "housing",
+    relatedCalculator: "loyer",
+    publishedAt: "2026-05-03",
+    updatedAt: "2026-05-03",
+    readingTimeMinutes: 6,
+    relatedGuides: ["droits-licenciement-maroc"],
+    keyPoints: {
+      ar: [
+        "القانون 67.12 يحدد الحد الأقصى للضمان الكرائي بشهرين من الكراء الشهري (الفصل 6)",
+        "لا يمكن للمالك الاحتفاظ بالضمان دون مبرر — البلى الطبيعي لا يُخصم",
+        "يُرجَّع الضمان بعد تسليم المفاتيح وإعداد محضر الخروج وتسوية الحسابات",
+        "إذا رفض المالك، يحق لك رفع طلب استعجالي أمام المحكمة الابتدائية",
+        "احسب ضمانك الدقيق باستخدام حاسبة الكراء المجانية",
+      ],
+      fr: [
+        "La Loi 67-12 plafonne la caution à 2 mois de loyer (Art. 6) — toute clause contraire est nulle",
+        "Le bailleur ne peut retenir la caution sans justification légale — l'usure normale n'est pas déductible",
+        "Restitution après remise des clés, état des lieux de sortie et règlement de tous les comptes",
+        "En cas de refus, saisine possible du juge des référés pour restitution forcée",
+        "Calculez votre dépôt exact avec notre simulateur gratuit",
+      ],
+      en: [
+        "Law 67-12 caps the rent deposit at 2 months' rent (Art. 6) — any contrary clause is void",
+        "The landlord cannot retain the deposit without legal justification — normal wear and tear is not deductible",
+        "Return after handing back keys, completing exit inspection, and settling all accounts",
+        "If the landlord refuses, you can apply to the urgent matters judge for forced restitution",
+        "Calculate your exact deposit using our free simulator",
+      ],
+    },
+    sections: [
+      {
+        id: "definition",
+        titleAr: "ما هو الضمان الكرائي؟",
+        titleFr: "Qu'est-ce que la caution locative?",
+        titleEn: "What is the Rent Deposit?",
+        contentAr: `الضمان الكرائي (أو التأمين الكرائي) هو مبلغ مالي يدفعه المستأجر للمالك عند توقيع عقد الكراء، يُحتجز كضمان في مواجهة أي أضرار قد تلحق بالمسكن خلال مدة الكراء، أو في مواجهة أي ديون قد تبقى في ذمة المستأجر عند المغادرة (كالكراء المتأخر أو الفواتير غير المسددة).
+
+ينظّم **القانون 67.12** المتعلق بكراء المحلات المعدة للسكنى والاستعمال المهني هذه العلاقة الكرائية في المغرب. وقد أحدث هذا القانون الصادر سنة 2016 ثورة حقيقية في حماية حقوق كلا الطرفين — المستأجر والمالك — بعد عقود من الفراغ القانوني.
+
+**لماذا يطلب الملاك الضمان الكرائي؟**
+- حماية المسكن من الأضرار غير العادية التي يتسبب فيها المستأجر
+- ضمان الكراء المتأخر في حالة توقف المستأجر عن الدفع
+- تغطية فواتير الماء والكهرباء غير المسددة عند المغادرة
+
+**الفرق بين الضمان والكراء الشهري:**
+الضمان مبلغ يبقى محتجزاً طوال مدة الكراء ويُرجَّع في الأصل عند انتهاء العقد. أما الكراء فهو ثمن الانتفاع بالمسكن يُدفع شهرياً. لا يجوز للمستأجر خصم الضمان مقابل آخر شهر كراء إلا باتفاق صريح مكتوب بين الطرفين.`,
+        contentFr: `La caution locative (ou dépôt de garantie) est une somme versée par le locataire au bailleur à la signature du contrat de bail. Elle est conservée comme garantie contre les dommages éventuels causés au logement durant la période de location ou contre les dettes restantes du locataire lors de son départ (loyers impayés, factures non réglées).
+
+La **Loi 67-12** relative à la location des locaux à usage d'habitation et à usage professionnel régit cette relation locative au Maroc. Promulguée en 2016, cette loi a profondément modernisé la protection des droits des deux parties — bailleur et locataire — après des décennies de vide juridique.
+
+**Pourquoi les bailleurs demandent-ils une caution?**
+- Protection contre les dégradations anormales causées par le locataire
+- Garantie des loyers impayés en fin de bail
+- Couverture des factures d'eau et d'électricité non réglées au départ
+
+**Différence entre caution et loyer mensuel:**
+La caution est une somme bloquée pendant toute la durée du bail, restituée en principe à la fin. Le loyer est le prix mensuel d'occupation du logement. La caution ne peut pas être imputée sur le dernier loyer sauf accord exprès écrit entre les parties.`,
+        contentEn: `The rent deposit (caution locative) is an amount paid by the tenant to the landlord when signing the lease agreement. It is held as a guarantee against any damage that may be caused to the property during the tenancy, or against any outstanding debts owed by the tenant at departure (unpaid rent or unsettled bills).
+
+**Law 67-12** on the rental of residential and professional premises governs this tenancy relationship in Morocco. Enacted in 2016, this law significantly modernised the protection of both parties' rights — landlord and tenant — after decades of legal uncertainty.
+
+**Why do landlords request a deposit?**
+- Protection against abnormal damage caused by the tenant
+- Guarantee against unpaid rent at the end of the lease
+- Coverage for unpaid water and electricity bills at departure
+
+**Difference between the deposit and monthly rent:**
+The deposit is a sum held for the entire duration of the lease, returned in principle at the end. The rent is the monthly price for occupying the property. The deposit may not be applied to the last month's rent unless both parties have agreed to this explicitly in writing.`,
+      },
+      {
+        id: "montant-legal",
+        titleAr: "الحد الأقصى القانوني — الفصل 6 من القانون 67.12",
+        titleFr: "Plafond légal — Article 6 de la Loi 67-12",
+        titleEn: "Legal Cap — Article 6 of Law 67-12",
+        contentAr: `حدّد المشرع المغربي الحد الأقصى للضمان الكرائي صراحةً في **الفصل 6 من القانون 67.12**:
+
+> **لا يمكن أن يتجاوز مبلغ الضمان الكرائي ما يعادل شهرين من الكراء الشهري.**
+
+هذا الحد الأقصى من النظام العام، بمعنى أن أي بند في عقد الكراء يشترط ضماناً يتجاوز شهرين يُعدّ باطلاً وعديم الأثر، حتى لو وقّع عليه المستأجر طوعاً.
+
+**أمثلة عملية:**
+
+| الكراء الشهري | الحد الأقصى القانوني للضمان |
+|---------------|-----------------------------|
+| 2,000 درهم | 4,000 درهم |
+| 3,500 درهم | 7,000 درهم |
+| 5,000 درهم | 10,000 درهم |
+| 8,000 درهم | 16,000 درهم |
+
+**إذا طلب منك المالك ضماناً يتجاوز شهرين:**
+- أنت في حل قانوني من دفع المبلغ الزائد
+- إذا دفعتَ الزيادة، يمكنك المطالبة باستردادها قضائياً
+- لا تتخلَّ عن حقك بحجة أنك "وقّعت" — التوقيع على بند مخالف للنظام العام لا يُلزمك
+
+**احسب ضمانك:** استخدم **حاسبة الكراء** للتحقق من المبلغ القانوني وغيره من معطيات عقد كرائك:`,
+        contentFr: `Le législateur marocain a expressément plafonné la caution locative à l'**article 6 de la Loi 67-12**:
+
+> **Le montant de la caution locative ne peut excéder l'équivalent de deux mois de loyer mensuel.**
+
+Ce plafond est d'ordre public: toute clause contractuelle exigeant une caution supérieure à deux mois est nulle et de nul effet, même si le locataire l'a signée librement.
+
+**Exemples pratiques:**
+
+| Loyer mensuel | Caution maximale légale |
+|---------------|------------------------|
+| 2 000 MAD | 4 000 MAD |
+| 3 500 MAD | 7 000 MAD |
+| 5 000 MAD | 10 000 MAD |
+| 8 000 MAD | 16 000 MAD |
+
+**Si le bailleur exige une caution supérieure à deux mois:**
+- Vous êtes légalement dispensé de payer l'excédent
+- Si vous avez déjà payé en trop, vous pouvez en réclamer le remboursement judiciairement
+- Ne renoncez pas à ce droit sous prétexte d'avoir "signé" — une clause contraire à l'ordre public ne vous lie pas
+
+**Calculez votre dépôt:** Utilisez le **simulateur de loyer** pour vérifier le montant légal et les autres données de votre bail:`,
+        contentEn: `The Moroccan legislature explicitly capped the rent deposit in **Article 6 of Law 67-12**:
+
+> **The amount of the rent deposit may not exceed the equivalent of two months' monthly rent.**
+
+This cap is a matter of public order: any contractual clause requiring a deposit exceeding two months is null and void, even if the tenant signed it freely.
+
+**Practical examples:**
+
+| Monthly rent | Maximum legal deposit |
+|--------------|-----------------------|
+| 2,000 MAD | 4,000 MAD |
+| 3,500 MAD | 7,000 MAD |
+| 5,000 MAD | 10,000 MAD |
+| 8,000 MAD | 16,000 MAD |
+
+**If the landlord demands a deposit exceeding two months:**
+- You are legally entitled to refuse the excess
+- If you have already overpaid, you can claim repayment through the courts
+- Do not waive this right on the basis that you "signed" — a clause contrary to public order does not bind you
+
+**Calculate your deposit:** Use the **rent simulator** to verify the legal amount and other details of your lease:`,
+      },
+      {
+        id: "conditions-restitution",
+        titleAr: "شروط استرداد الضمان الكرائي",
+        titleFr: "Conditions de restitution de la caution",
+        titleEn: "Conditions for Return of the Deposit",
+        contentAr: `بمجرد انتهاء عقد الكراء، يلتزم المالك بإعادة الضمان الكرائي كاملاً، ما لم تكن هناك أسباب قانونية مشروعة للاحتجاز الجزئي أو الكلي.
+
+**الشروط الواجب استيفاؤها لاسترداد الضمان:**
+
+**1. تسليم المفتاح**
+يجب تسليم جميع مفاتيح المسكن للمالك فور مغادرة المسكن. عدم تسليم المفتاح يُعدّ قانوناً استمراراً في الانتفاع بالمسكن.
+
+**2. محضر الخروج**
+يُستحسن تحرير محضر يوثّق حالة المسكن لحظة المغادرة، بمقارنتها مع محضر الدخول. هذه الوثيقة هي الدليل الرئيسي عند أي نزاع لاحق حول الأضرار. إذا رفض المالك إعداده، وثّق حالة المسكن بصور موثّقة مؤرخة.
+
+**3. تسوية فواتير الماء والكهرباء والغاز**
+يجب على المستأجر تسوية جميع الفواتير قبل المغادرة، أو إثبات نقل الحساب رسمياً باسم المالك.
+
+**4. خلو الذمة من الكراء المتأخر**
+أي متأخرات كرائية موثّقة يمكن للمالك استخلاصها من الضمان قبل إرجاع الباقي.
+
+**ما لا يمكن للمالك خصمه من الضمان:**
+- **البلى الطبيعي** — التلف الناتج عن الاستعمال العادي: تقشر الطلاء بسبب القدم، بهتان الألوان، تآكل أرضيات الأثاث، حتى بعض الخدوش الخفيفة — لا يُخصم
+- مصاريف الصيانة الاعتيادية التي يلتزم بها المالك قانوناً (كاستبدال التجهيزات المتهالكة)
+- أي ضرر لم يُوثَّق بمحضر أو فاتورة إصلاح`,
+        contentFr: `À la fin du bail, le bailleur est tenu de restituer intégralement la caution, sauf existence de motifs légaux valables de retenue partielle ou totale.
+
+**Conditions à remplir pour récupérer la caution:**
+
+**1. Remise des clés**
+Toutes les clés du logement doivent être remises au bailleur dès la libération des lieux. La non-remise des clés est légalement assimilée à une occupation continue.
+
+**2. État des lieux de sortie**
+Il est vivement recommandé d'établir un état des lieux contradictoire documentant l'état du logement à la sortie, comparé à l'état d'entrée. En cas de refus du bailleur, documentez l'état des lieux par des photos datées et horodatées.
+
+**3. Règlement des factures d'eau, d'électricité et de gaz**
+Le locataire doit régler toutes les factures avant son départ ou prouver le transfert officiel des compteurs au nom du bailleur.
+
+**4. Absence de loyers impayés**
+Tout arriéré locatif documenté peut être déduit de la caution avant restitution du solde.
+
+**Ce que le bailleur ne peut pas déduire:**
+- **Usure normale** — dégradation résultant de l'usage ordinaire: peinture qui s'écaille avec le temps, couleurs passées, usure des sols — non déductible
+- Frais d'entretien courant légalement à la charge du bailleur (remplacement d'équipements vétustes)
+- Tout dommage non documenté par un état des lieux ou une facture de réparation`,
+        contentEn: `At the end of the lease, the landlord is obliged to return the deposit in full, unless there are legally valid grounds for partial or total retention.
+
+**Conditions to meet for full recovery of the deposit:**
+
+**1. Return of keys**
+All keys to the property must be handed back to the landlord upon vacating the premises. Not returning keys is legally treated as continued occupation.
+
+**2. Exit inspection report**
+It is strongly recommended to draw up a joint inspection report documenting the condition of the property at exit, compared to its entry condition. If the landlord refuses to draw one up, document the property's condition with dated, timestamped photographs.
+
+**3. Settlement of water, electricity, and gas bills**
+The tenant must settle all utility bills before departing, or prove that accounts have been officially transferred to the landlord's name.
+
+**4. No outstanding rent arrears**
+Any documented rent arrears may be deducted from the deposit before the balance is returned.
+
+**What the landlord cannot deduct:**
+- **Normal wear and tear** — deterioration from ordinary use: peeling paint with age, faded colours, floor wear — not deductible
+- Routine maintenance costs legally borne by the landlord (replacing worn-out fixtures due to age)
+- Any damage not documented by an inspection report or repair invoice`,
+      },
+      {
+        id: "refus-restitution",
+        titleAr: "إذا رفض المالك إعادة الضمان",
+        titleFr: "Si le bailleur refuse de restituer la caution",
+        titleEn: "If the Landlord Refuses to Return the Deposit",
+        contentAr: `رفض المالك إعادة الضمان دون مبرر قانوني مشروع هو فعل غير قانوني. إليك كيف تتصرف خطوة بخطوة:
+
+**الخطوة 1 — المطالبة الودية (مراسلة رسمية)**
+أرسل مراسلة كتابية (رسالة بريدية مضمونة مع إشعار بالاستلام أو بريد إلكتروني موثّق) تطالب فيها بإعادة الضمان خلال أجل محدد (8 إلى 15 يوماً). هذه المراسلة تشكّل دليلاً ضرورياً في حالة اللجوء إلى القضاء.
+
+**الخطوة 2 — المصالحة الإدارية**
+يمكن اللجوء إلى السلطات الإدارية المحلية (رئاسة الدائرة أو المقاطعة) للمحاولة الودية. كثير من النزاعات تُحسم في هذه المرحلة دون اللجوء للقضاء.
+
+**الخطوة 3 — القضاء الاستعجالي**
+إذا رفض المالك الحل الودي، يمكنك رفع طلب استعجالي أمام رئيس المحكمة الابتدائية (قاضي الأحكام الاستعجالية). هذا المسار سريع نسبياً — جلسة خلال أسابيع لا أشهر — ولا يتطلب بالضرورة توكيل محامٍ في المرحلة الأولى.
+
+**الوثائق التي ستحتاجها أمام المحكمة:**
+- نسخة من عقد الكراء
+- إيصال دفع الضمان أو الحوالة البنكية
+- محضر الخروج (إن وُجد) أو صور موثّقة
+- المراسلات الودية مع المالك
+- إيصال تسليم المفتاح أو شهادة شاهد
+
+**الخطوة 4 — الدعوى الأصلية**
+إذا لم ينصفك القضاء الاستعجالي أو كان المبلغ كبيراً، ارفع دعوى أصلية أمام المحكمة الابتدائية تطالب بإرجاع الضمان وتعويض عن الضرر.
+
+**مسطرة الأداء (للمبالغ الصغيرة):** إذا كان الضمان لا يتجاوز 5,000 درهم، فمسطرة أوامر الأداء أسرع وأرخص من الدعوى العادية.`,
+        contentFr: `Le refus du bailleur de restituer la caution sans motif légal valable est un acte illégal. Voici comment agir étape par étape:
+
+**Étape 1 — Mise en demeure amiable**
+Envoyez une lettre recommandée avec accusé de réception (ou un email documenté) exigeant la restitution dans un délai précis (8 à 15 jours). Ce courrier constitue une preuve essentielle pour tout recours judiciaire ultérieur.
+
+**Étape 2 — Tentative de conciliation administrative**
+Vous pouvez saisir les autorités administratives locales (arrondissement, section) pour une tentative de règlement amiable. Beaucoup de litiges se règlent à ce stade sans passer par les tribunaux.
+
+**Étape 3 — Saisine du juge des référés**
+En cas de refus persistant, introduisez une demande en référé devant le président du tribunal de première instance. Cette procédure est rapide — audience en semaines, pas en mois — et ne nécessite pas nécessairement un avocat en première instance.
+
+**Documents nécessaires devant le tribunal:**
+- Copie du contrat de bail
+- Reçu de paiement de la caution ou virement bancaire
+- État des lieux de sortie (si établi) ou photos datées
+- Correspondances amiables avec le bailleur
+- Reçu de remise des clés ou témoin
+
+**Étape 4 — Action au fond**
+Si la procédure en référé est insuffisante ou le montant important, engagez une action ordinaire en restitution de caution + dommages-intérêts.
+
+**Injonction de payer (petites créances):** Pour une caution inférieure à 5 000 MAD, cette procédure est plus rapide et moins coûteuse.`,
+        contentEn: `A landlord's refusal to return the deposit without a valid legal reason is unlawful. Here is how to act step by step:
+
+**Step 1 — Formal written demand (mise en demeure)**
+Send a registered letter with acknowledgement of receipt (or documented email) demanding return of the deposit within a set period (8 to 15 days). This letter is essential evidence for any subsequent legal action.
+
+**Step 2 — Administrative conciliation**
+You can approach local administrative authorities (district office) for an amicable settlement attempt. Many disputes are resolved at this stage without going to court.
+
+**Step 3 — Urgent court application (référé)**
+If the landlord persists in refusing, file an urgent application before the president of the first instance court (juge des référés). This procedure is fast — a hearing within weeks, not months — and does not necessarily require a lawyer at first instance.
+
+**Documents needed in court:**
+- Copy of the lease contract
+- Deposit payment receipt or bank transfer record
+- Exit inspection report (if drawn up) or dated photographs
+- Amicable correspondence with the landlord
+- Key handover receipt or witness
+
+**Step 4 — Full civil action**
+If the urgent procedure is insufficient or the amount is significant, file a full civil action for deposit restitution plus damages.
+
+**Injunction to pay (small amounts):** For a deposit under 5,000 MAD, this procedure is faster and cheaper than ordinary proceedings.`,
+      },
+      {
+        id: "conseils-pratiques",
+        titleAr: "نصائح عملية — حماية نفسك من البداية",
+        titleFr: "Conseils pratiques — Se protéger dès le départ",
+        titleEn: "Practical Tips — Protecting Yourself From the Start",
+        contentAr: `**عند توقيع عقد الكراء:**
+- اطلب دائماً **إيصالاً مكتوباً** بمبلغ الضمان الذي دفعته، موقعاً من طرف المالك أو تأكيداً بنكياً
+- تحقق من أن مبلغ الضمان لا يتجاوز **شهرين من الكراء** — إذا طُلب منك أكثر، فهو مخالف للقانون 67.12
+- احرص على تحرير **عقد كراء مكتوب** حتى لو كان الاتفاق شفهياً في البداية — العقد الشفهي أصعب إثباتاً أمام القضاء
+- وثّق **حالة المسكن عند الدخول** بصور وفيديو مؤرّخَيْن
+
+**خلال فترة الكراء:**
+- احتفظ بجميع إيصالات دفع الكراء أو كشوف الحوالات البنكية
+- بلّغ المالك **كتابياً** عن أي أعطال أو أضرار فور حدوثها، حتى لا تُنسب إليك لاحقاً
+- لا تدفع الكراء نقداً بدون إيصال
+
+**عند المغادرة:**
+- أشعر المالك كتابياً بمغادرتك وفق الأجل المنصوص عليه في العقد
+- اطلب إعداد **محضر خروج مشترك** موقع من الطرفين — إذا رفض المالك، وثّق الحالة بصور مؤرخة
+- لا تترك المسكن دون الحصول على **وثيقة تثبت تسليم المفاتيح**
+- سوِّ فواتير الماء والكهرباء قبل المغادرة
+
+**القاعدة الذهبية:** الوثائق هي سلاحك القانوني. كل اتفاق شفهي يمكن إنكاره — كل شيء مكتوب أصعب إنكاره أمام القضاء.`,
+        contentFr: `**À la signature du bail:**
+- Exigez toujours un **reçu écrit** du montant de la caution versée, signé par le bailleur ou confirmation bancaire
+- Vérifiez que le montant ne dépasse pas **deux mois de loyer** — au-delà, c'est illégal selon la Loi 67-12
+- Insistez pour un **contrat de bail écrit** même si l'accord était initialement verbal — un bail oral est difficile à prouver
+- Documentez **l'état des lieux d'entrée** par photos et vidéos datées
+
+**Pendant la location:**
+- Conservez tous les reçus de loyer ou relevés de virements bancaires
+- Signalez par **écrit** tout défaut ou dégât dès sa survenance, pour éviter qu'il vous soit imputé plus tard
+- N'effectuez jamais de paiement en espèces sans reçu
+
+**Au départ:**
+- Notifiez votre départ **par écrit** dans les délais contractuels
+- Demandez un **état des lieux de sortie contradictoire** signé par les deux parties — si le bailleur refuse, photographiez l'état des lieux avec dates
+- Ne quittez pas les lieux sans un **document attestant la remise des clés**
+- Réglez vos compteurs d'eau et d'électricité avant de partir
+
+**Règle d'or:** Les documents sont votre meilleure protection juridique. Tout accord verbal peut être nié — tout écrit est plus difficile à contester devant un tribunal.`,
+        contentEn: `**When signing the lease:**
+- Always request a **written receipt** for the deposit amount paid, signed by the landlord or confirmed by bank transfer
+- Verify that the amount does not exceed **two months' rent** — anything more is illegal under Law 67-12
+- Insist on a **written lease contract** even if the initial agreement was verbal — a verbal lease is harder to prove in court
+- Document the **property's condition at entry** with dated photographs and video
+
+**During the tenancy:**
+- Keep all rent payment receipts or bank transfer records
+- Report any faults or damage **in writing** as soon as they occur, to avoid being blamed later
+- Never pay rent in cash without a receipt
+
+**When leaving:**
+- Notify your departure **in writing** within the contractual notice period
+- Request a **joint exit inspection report** signed by both parties — if the landlord refuses, photograph the condition of the property with dates
+- Do not vacate without a **document confirming key handover**
+- Settle your water and electricity accounts before leaving
+
+**Golden rule:** Documents are your legal weapon. Any verbal agreement can be denied — anything in writing is harder to contest in court.`,
+      },
+    ],
+    faqs: [
+      {
+        questionAr: "ما هو الحد الأقصى للضمان الكرائي في المغرب؟",
+        questionFr: "Quel est le plafond légal de la caution locative au Maroc?",
+        questionEn: "What is the legal cap on the rent deposit in Morocco?",
+        answerAr:
+          "يحدد الفصل 6 من القانون 67.12 الحد الأقصى للضمان الكرائي بما يعادل شهرين من الكراء الشهري. أي بند في العقد يشترط ضماناً يتجاوز هذا المبلغ يُعدّ باطلاً وعديم الأثر من النظام العام، حتى لو وقّع عليه المستأجر. ما دُفع بالزيادة يمكن استرداده قضائياً.",
+        answerFr:
+          "L'article 6 de la Loi 67-12 plafonne la caution locative à l'équivalent de deux mois de loyer mensuel. Toute clause contractuelle exigeant davantage est nulle de plein droit (ordre public), même si le locataire l'a signée. Le trop-perçu éventuel est récupérable judiciairement.",
+        answerEn:
+          "Article 6 of Law 67-12 caps the rent deposit at the equivalent of two months' monthly rent. Any contractual clause requiring more is void as a matter of public order, even if the tenant signed it. Any overpayment can be recovered through the courts.",
+      },
+      {
+        questionAr: "متى يجب على المالك إرجاع الضمان الكرائي؟",
+        questionFr: "Dans quel délai le bailleur doit-il restituer la caution?",
+        questionEn: "When must the landlord return the deposit?",
+        answerAr:
+          "يجب إرجاع الضمان بعد انتهاء العقد وتسليم المفاتيح وإعداد محضر الخروج وتسوية جميع الحسابات. لا يحدد القانون 67.12 أجلاً بالأيام بشكل صريح، لكن الرأي الفقهي السائد يُحدد أجلاً معقولاً لا يتجاوز شهراً من تاريخ المغادرة الفعلية مع استيفاء الشروط. كل تأخير غير مبرر يُجيز المطالبة القضائية.",
+        answerFr:
+          "La caution doit être restituée après la fin du bail, la remise des clés, l'état des lieux de sortie et le règlement de tous les comptes. La Loi 67-12 ne fixe pas de délai en jours de façon explicite, mais la doctrine dominante retient un délai raisonnable n'excédant pas un mois à compter du départ effectif sous réserve des conditions remplies. Tout retard injustifié ouvre droit à un recours judiciaire.",
+        answerEn:
+          "The deposit must be returned after the lease ends, the keys are handed back, the exit inspection is completed, and all accounts are settled. Law 67-12 does not explicitly set a deadline in days, but the prevailing legal opinion holds a reasonable period not exceeding one month from the actual date of departure (conditions met). Any unjustified delay entitles the tenant to judicial recourse.",
+      },
+      {
+        questionAr: "هل يمكن للمالك خصم مبالغ من الضمان بسبب أضرار المسكن؟",
+        questionFr: "Le bailleur peut-il déduire des sommes pour des dégradations?",
+        questionEn: "Can the landlord deduct amounts for damage to the property?",
+        answerAr:
+          "نعم، لكن فقط للأضرار التي تتجاوز البلى الطبيعي الناتج عن الاستعمال العادي. الكسر المتعمد، الثقوب الكبيرة في الجدران، الحرق، التلف الجسيم — قابلة للخصم بشرط التوثيق (فاتورة إصلاح + صور). أما تقشر الطلاء بسبب القدم، بهتان الألوان، تآكل الأرضيات بالاستعمال — فلا تُخصم. يجب على المالك إشعار المستأجر بأي خصم قبل احتجاز الضمان.",
+        answerFr:
+          "Oui, mais uniquement pour les dégradations dépassant l'usure normale liée à l'usage ordinaire. Bris volontaires, trous importants dans les murs, brûlures, dégradations graves — déductibles sous réserve de documentation (facture de réparation + photos). En revanche, peinture qui s'écaille avec le temps, couleurs passées, usure des sols — non déductibles. Le bailleur doit notifier le locataire de toute retenue avant de l'opérer.",
+        answerEn:
+          "Yes, but only for damage exceeding normal wear and tear from ordinary use. Intentional breakages, large holes in walls, burns, serious damage — deductible provided they are documented (repair invoice + photographs). However, paint peeling with age, faded colours, floor wear from use — not deductible. The landlord must notify the tenant of any deductions before withholding them.",
+      },
+      {
+        questionAr: "هل يمكن احتساب الضمان مقابل آخر شهر كراء؟",
+        questionFr: "La caution peut-elle servir à couvrir le dernier loyer?",
+        questionEn: "Can the deposit be used to cover the last month's rent?",
+        answerAr:
+          "لا، ليس بشكل تلقائي. الضمان الكرائي والكراء الشهري عنصران قانونيان منفصلان. لا يمكن للمستأجر احتساب الضمان بديلاً عن آخر شهر كراء إلا إذا اتفق الطرفان صراحةً على ذلك كتابةً. التصرف بهذا الشكل من طرف واحد قد يُعرّض المستأجر لدعوى قضائية بسبب الكراء المتأخر.",
+        answerFr:
+          "Non, pas automatiquement. La caution et le loyer mensuel sont deux éléments juridiques distincts. Le locataire ne peut pas imputer unilatéralement la caution sur le dernier loyer, sauf accord exprès écrit des deux parties. Agir unilatéralement expose le locataire à des poursuites pour loyer impayé.",
+        answerEn:
+          "No, not automatically. The deposit and monthly rent are two distinct legal elements. The tenant cannot unilaterally apply the deposit against the last month's rent unless both parties have expressly agreed to this in writing. Acting unilaterally in this way may expose the tenant to proceedings for unpaid rent.",
+      },
+    ],
+  },
 ];
 
 export const getGuide = (slug: string): Guide | undefined =>

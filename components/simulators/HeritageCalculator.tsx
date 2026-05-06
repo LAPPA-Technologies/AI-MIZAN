@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fmt } from "../../lib/simulatorHelpers";
 import ShareButtons from "./ShareButtons";
 import CalculatorArticlesStrip from "./CalculatorArticlesStrip";
@@ -331,26 +331,12 @@ export default function HeritageCalculator({ dict, lang }: HeritageCalculatorPro
   const [calcResult, setCalcResult] = useState<ReturnType<typeof calcInheritance> | null>(null);
   const [modalArticle, setModalArticle] = useState<ArticleRef | null>(null);
   const [showBlocked, setShowBlocked] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const estateNum = parseFloat(estate) || 0;
   const bequestNum = parseFloat(bequest) || 0;
   const debtsNum = parseFloat(debts) || 0;
   const netEstate = Math.max(0, estateNum - bequestNum - debtsNum);
   const bequestExceedsThird = bequestNum > 0 && bequestNum > estateNum / 3;
   const debtsExceedEstate = debtsNum > 0 && debtsNum > estateNum;
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (netEstate > 0) {
-        setCalcResult(calcInheritance({ estate: netEstate, ...inp }));
-      } else {
-        setCalcResult(null);
-      }
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [netEstate, inp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleGenderSelect(g: DeceasedGender) {
     setDeceasedGender(g);
